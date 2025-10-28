@@ -1,0 +1,7 @@
+{
+  "name": "RootWork Canvas",
+  "description": "A visual, non-linear learning environment designed for how trauma-affected and neurodivergent brains learn, externalizing working memory and supporting executive function.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
