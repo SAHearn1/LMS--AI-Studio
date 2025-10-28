@@ -9,7 +9,7 @@ interface ZoomControlsProps {
 
 const ZoomControls: React.FC<ZoomControlsProps> = ({ onZoomIn, onZoomOut, onZoomToFit }) => {
     return (
-        <div className="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm p-1 rounded-lg shadow-md flex flex-col items-center gap-1">
+        <div className="bg-white/80 backdrop-blur-sm p-1 rounded-lg shadow-md flex flex-col items-center gap-1">
             <button onClick={onZoomIn} className="p-2 rounded-md hover:bg-slate-200 transition-colors" title="Zoom In">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

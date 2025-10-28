@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage } from 'konva/lib/Stage';
-import { NodeType, type CanvasNode, type Connection, type NodePosition, type ModalType, VideoNodeData } from '../types';
+import { NodeType, type CanvasNode, type Connection, type NodePosition, type ModalType, type LessonPlan } from '../types';
 import {
   TextNodeData,
   ImageNodeData,
@@ -18,16 +18,14 @@ interface CanvasState {
   nodes: Record<string, CanvasNode>;
   connections: Record<string, Connection>;
   selectedNodeIds: string[];
-  stage: {
-    scale: number;
-    position: NodePosition;
-  };
   stage: Stage | null;
   editingNodeId: string | null;
   modal: {
     type: ModalType;
     data?: any;
-  }
+  };
+  lessonPlan: LessonPlan | null;
+  isLessonPanelOpen: boolean;
 }
 
 interface CanvasActions {
@@ -45,6 +43,9 @@ interface CanvasActions {
   setEditingNodeId: (id: string | null) => void;
   openModal: (type: ModalType, data?: any) => void;
   closeModal: () => void;
+  setLessonPlan: (plan: { title: string; tasks: string[] } | null) => void;
+  toggleTaskCompletion: (taskIndex: number) => void;
+  toggleLessonPanel: () => void;
 }
 
 const defaultNodes: Record<string, CanvasNode> = {
@@ -60,7 +61,7 @@ const defaultNodes: Record<string, CanvasNode> = {
     type: NodeType.Text,
     position: { x: 500, y: 250 },
     size: { width: 250, height: 160 },
-    data: { text: "This is a visual workspace to organize your thoughts.\n\nUse the toolbar to add notes, or AI-generated images and videos!", backgroundColor: '#FEF3C7' }
+    data: { text: "This is a visual workspace to organize your thoughts.\n\nUse the toolbar to add notes, or start a new lesson!", backgroundColor: '#FEF3C7' }
   }
 };
 
@@ -73,9 +74,11 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
     stage: null,
     editingNodeId: null,
     modal: { type: null, data: null },
+    lessonPlan: null,
+    isLessonPanelOpen: false,
 
     setStage: (stage) => {
-      set({ stage });
+      set({ stage: stage });
     },
 
     addNode: (node) => {
@@ -188,6 +191,29 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
     },
     closeModal: () => {
       set({ modal: { type: null, data: undefined } });
+    },
+    setLessonPlan: (plan) => {
+      if (plan) {
+        set({
+          lessonPlan: {
+            title: plan.title,
+            tasks: plan.tasks.map(text => ({ text, completed: false })),
+          },
+          isLessonPanelOpen: true,
+        });
+      } else {
+        set({ lessonPlan: null, isLessonPanelOpen: false });
+      }
+    },
+    toggleTaskCompletion: (taskIndex) => {
+      set(state => {
+        if (state.lessonPlan && state.lessonPlan.tasks[taskIndex]) {
+          state.lessonPlan.tasks[taskIndex].completed = !state.lessonPlan.tasks[taskIndex].completed;
+        }
+      });
+    },
+    toggleLessonPanel: () => {
+      set(state => ({ isLessonPanelOpen: !state.isLessonPanelOpen }));
     },
   }))
 );

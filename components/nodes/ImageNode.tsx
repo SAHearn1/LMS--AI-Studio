@@ -41,16 +41,21 @@ const KonvaButton: React.FC<KonvaButtonProps> = ({ text, x, y, onClick }) => (
 );
 
 const ImageNode: React.FC<ImageNodeProps> = ({ node, isSelected }) => {
-    const { openModal, addNode, updateNodeData } = useCanvasState();
+    const openModal = useCanvasState(state => state.openModal);
+    const addNode = useCanvasState(state => state.addNode);
+    const updateNodeData = useCanvasState(state => state.updateNodeData);
     const [image, status] = useImage(node.data.src, 'anonymous');
 
     React.useEffect(() => {
-        if (status === 'loaded' && image && !node.data.base64) {
+        if (status === 'loaded' && image && node.data.base64 === undefined) {
              fileToBase64(node.data.src).then(base64 => {
                  updateNodeData<ImageNodeType['data']>(node.id, { base64 });
-             }).catch(err => console.error("Failed to convert image to base64", err));
+             }).catch(err => {
+                console.error("Failed to convert image to base64", err)
+                updateNodeData<ImageNodeType['data']>(node.id, { base64: null });
+             });
         }
-    }, [status, image, node.id, node.data.src, node.data.base64]);
+    }, [status, image, node.id, node.data.src, node.data.base64, updateNodeData]);
 
     const handleAnalyze = async (e: KonvaEventObject<MouseEvent | PointerEvent>) => {
         e.evt.stopPropagation();

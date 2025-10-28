@@ -16,8 +16,8 @@ const AiAssistant: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [useThinkingMode, setUseThinkingMode] = useState(false);
 
-    const nodes = useCanvasState(state => state.nodes);
-    const selectedNodeIds = useCanvasState(state => state.selectedNodeIds);
+    const nodes = useCanvasState((state) => state.nodes);
+    const selectedNodeIds = useCanvasState((state) => state.selectedNodeIds);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {

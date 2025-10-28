@@ -42,6 +42,7 @@ const Toolbar: React.FC = () => {
     }
 
     const tools = [
+        { label: 'Lesson', icon: 'M12 6.253v11.494m-9-8.994v6.494c0 .566.474 1.022 1.055.998a8.043 8.043 0 014.288-1.996 8.043 8.043 0 014.288 1.996 1.04 1.04 0 001.055-.998V8.753c0-.566-.474-1.022-1.055-.998a8.043 8.043 0 01-4.288 1.996 8.043 8.043 0 01-4.288-1.996A1.04 1.04 0 003 8.753z', action: () => openModal('LESSON_LOADER')},
         { label: 'Note', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', action: handleAddNote },
         { label: 'Image', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', action: handleImageUpload },
         { label: 'AI Image', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l-3 3m14 10l-3 3M19 6l-3 3M5 19l3-3', action: () => openModal('IMAGE_GEN', { position: getNodePosition() })},

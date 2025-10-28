@@ -9,26 +9,27 @@ import type { CanvasNode } from '../types';
 const Canvas: React.FC = () => {
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const nodes = useCanvasState(state => state.nodes);
-  const selectedNodeIds = useCanvasState(state => state.selectedNodeIds);
-  const setStage = useCanvasState(state => state.setStage);
-  const clearSelection = useCanvasState(state => state.clearSelection);
-  const deleteSelectedNodes = useCanvasState(state => state.deleteSelectedNodes);
-  const editingNodeId = useCanvasState(state => state.editingNodeId);
+  const nodes = useCanvasState((state) => state.nodes);
+  const selectedNodeIds = useCanvasState((state) => state.selectedNodeIds);
+  const setStage = useCanvasState((state) => state.setStage);
+  const clearSelection = useCanvasState((state) => state.clearSelection);
+  const deleteSelectedNodes = useCanvasState((state) => state.deleteSelectedNodes);
+  const editingNodeId = useCanvasState((state) => state.editingNodeId);
 
   const editingNode = editingNodeId ? nodes[editingNodeId] : null;
 
   useEffect(() => {
-    if (stageRef.current) {
-      setStage(stageRef.current);
+    setStage(stageRef.current);
+    return () => {
+      setStage(null);
     }
   }, [setStage]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current) {
-        stageRef.current?.width(containerRef.current.offsetWidth);
-        stageRef.current?.height(containerRef.current.offsetHeight);
+      if (containerRef.current && stageRef.current) {
+        stageRef.current.width(containerRef.current.offsetWidth);
+        stageRef.current.height(containerRef.current.offsetHeight);
       }
     };
     handleResize();
@@ -45,7 +46,7 @@ const Canvas: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, editingNodeId]);
+  }, [selectedNodeIds, deleteSelectedNodes, editingNodeId]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();

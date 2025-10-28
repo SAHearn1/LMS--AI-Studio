@@ -1,6 +1,5 @@
 import React from 'react';
-import { Rect, Text, Group, Image as KonvaImage } from 'react-konva';
-import useImage from 'use-image';
+import { Rect, Text, Group } from 'react-konva';
 import type { VideoNode as VideoNodeType } from '../../types';
 import { useCanvasState } from '../../hooks/useCanvasState';
 
@@ -10,47 +9,61 @@ interface VideoNodeProps {
 }
 
 const VideoNode: React.FC<VideoNodeProps> = ({ node, isSelected }) => {
-    const { openModal } = useCanvasState();
-    // In a real app, you would generate a thumbnail. For now, we use a placeholder.
-    // const [thumbnail] = useImage(node.data.thumbnailSrc || 'https://placehold.co/480x270/047857/FFF?text=Video', 'anonymous');
+    const openModal = useCanvasState(state => state.openModal);
 
     const handleClick = () => {
         openModal('VIDEO_PLAYER', { src: node.data.src });
     }
 
     return (
-        <Group onClick={handleClick} onTap={handleClick}>
+        <Group 
+            onClick={handleClick} 
+            onTap={handleClick}
+            onMouseEnter={e => {
+                const stage = e.target.getStage();
+                if (stage) stage.container().style.cursor = 'pointer';
+            }}
+            onMouseLeave={e => {
+                const stage = e.target.getStage();
+                if (stage) stage.container().style.cursor = 'default';
+            }}
+        >
             <Rect
                 width={node.size.width}
                 height={node.size.height}
                 fill="#1f2937"
                 cornerRadius={8}
-                shadowColor="rgba(0,0,0,0.2)"
+                shadowColor="rgba(0,0,0,0.1)"
                 shadowBlur={10}
                 shadowOffset={{ x: 0, y: 4 }}
                 stroke={isSelected ? '#2563EB' : '#4b5563'}
-                strokeWidth={isSelected ? 3 : 1}
+                strokeWidth={isSelected ? 2 : 1}
             />
-            {/* {thumbnail && <KonvaImage image={thumbnail} width={node.size.width} height={node.size.height} cornerRadius={8} />} */}
+            {/* Play Icon */}
             <Text
-                text="▶️"
+                text="▶"
                 fontSize={48}
+                fill="white"
                 width={node.size.width}
                 height={node.size.height}
                 align="center"
                 verticalAlign="middle"
+                opacity={0.8}
+                listening={false}
             />
-            <Text
+             <Text
                 text={node.data.prompt}
                 fontSize={12}
                 fill="white"
-                fontFamily="Inter, sans-serif"
-                width={node.size.width - 20}
+                width={node.size.width}
                 height={40}
-                x={10}
-                y={node.size.height - 45}
+                padding={10}
+                y={node.size.height - 40}
                 align="center"
                 verticalAlign="middle"
+                fontFamily="Inter, sans-serif"
+                fontStyle="italic"
+                wrap="char"
                 ellipsis={true}
                 listening={false}
             />

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Group, Transformer } from 'react-konva';
+import { Group, Transformer, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import { NodeType, type CanvasNode } from '../types';
 import { useCanvasState } from '../hooks/useCanvasState';
@@ -12,14 +12,42 @@ interface NodeComponentProps {
   isSelected: boolean;
 }
 
+// A simple, self-contained fallback component for node types that don't have a dedicated component yet.
+const FallbackNode: React.FC<{ node: CanvasNode }> = ({ node }) => (
+    <Group>
+        <Rect
+            width={node.size.width}
+            height={node.size.height}
+            fill="#fecaca" // A reddish color to indicate it's a fallback
+            cornerRadius={8}
+            shadowColor="rgba(0,0,0,0.1)"
+            shadowBlur={10}
+            shadowOffset={{ x: 0, y: 4 }}
+        />
+        <Text
+            text={`Unsupported Node: ${node.type}`}
+            width={node.size.width}
+            height={node.size.height}
+            padding={16}
+            fontSize={14}
+            fontFamily="Inter, sans-serif"
+            fill="#991b1b"
+            verticalAlign="middle"
+            align="center"
+            listening={false}
+        />
+    </Group>
+);
+
+
 const NodeComponent: React.FC<NodeComponentProps> = ({ node, isSelected }) => {
   const shapeRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
   
-  const selectNode = useCanvasState(state => state.selectNode);
-  const handleDragEnd = useCanvasState(state => state.handleDragEnd);
-  const updateNode = useCanvasState(state => state.updateNode);
-  const editingNodeId = useCanvasState(state => state.editingNodeId);
+  const selectNode = useCanvasState((state) => state.selectNode);
+  const handleDragEnd = useCanvasState((state) => state.handleDragEnd);
+  const updateNode = useCanvasState((state) => state.updateNode);
+  const editingNodeId = useCanvasState((state) => state.editingNodeId);
 
   const isEditing = editingNodeId === node.id;
 
@@ -44,8 +72,7 @@ const NodeComponent: React.FC<NodeComponentProps> = ({ node, isSelected }) => {
       case 'video':
         return <VideoNode node={node} isSelected={isSelected} />;
       default:
-        // FIX: Use NodeType.Text to match the expected type for the TextNode component's node prop.
-        return <TextNode isSelected={false} node={{...node, type: NodeType.Text, data: {text: `Unsupported: ${node.type}`, backgroundColor: '#fecaca'}}} />;
+        return <FallbackNode node={node} />;
     }
   };
 

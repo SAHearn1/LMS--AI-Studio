@@ -36,7 +36,7 @@ export interface ImageNodeData {
   src: string;
   alt: string;
   prompt?: string;
-  base64?: string; // Store base64 for AI operations
+  base64?: string | null; // Store base64 for AI operations
 }
 
 export interface VideoNodeData {
@@ -91,4 +91,15 @@ export interface Connection {
   color?: string;
 }
 
-export type ModalType = 'IMAGE_GEN' | 'VIDEO_GEN' | 'IMAGE_EDIT' | 'VIDEO_PLAYER' | null;
+export interface LessonTask {
+  text: string;
+  completed: boolean;
+}
+
+export interface LessonPlan {
+  title: string;
+  tasks: LessonTask[];
+}
+
+
+export type ModalType = 'IMAGE_GEN' | 'VIDEO_GEN' | 'IMAGE_EDIT' | 'VIDEO_PLAYER' | 'LESSON_LOADER' | null;

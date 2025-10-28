@@ -10,7 +10,7 @@ interface TextNodeProps {
 }
 
 const TextNode: React.FC<TextNodeProps> = ({ node, isSelected }) => {
-  const { setEditingNodeId } = useCanvasState();
+  const setEditingNodeId = useCanvasState(state => state.setEditingNodeId);
   const [isReading, setIsReading] = useState(false);
 
   const handleDblClick = () => {
