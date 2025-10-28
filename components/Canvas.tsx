@@ -24,7 +24,7 @@ const Canvas: React.FC = () => {
 
   useEffect(() => {
     setStageRef(stageRef);
-  }, [setStageRef]);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,7 +47,7 @@ const Canvas: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, deleteSelectedNodes, editingNodeId]);
+  }, [selectedNodeIds, editingNodeId]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
