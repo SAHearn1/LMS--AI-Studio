@@ -5,15 +5,12 @@ import type { Stage } from 'konva/lib/Stage';
 import { fileToBase64, triggerFileUpload } from '../utils/helpers';
 
 const Toolbar: React.FC = () => {
-    const { addNode, stageRef, openModal } = useCanvasState(state => ({
-        addNode: state.addNode,
-        stageRef: state.stageRef,
-        openModal: state.openModal,
-    }));
+    const addNode = useCanvasState(state => state.addNode);
+    const stage = useCanvasState(state => state.stage);
+    const openModal = useCanvasState(state => state.openModal);
 
     const getNodePosition = () => {
-        if (!stageRef?.current) return { x: 200, y: 200};
-        const stage = stageRef.current as Stage;
+        if (!stage) return { x: 200, y: 200};
         const currentPos = stage.getPointerPosition() || {x: stage.width()/2, y: stage.height()/2};
         
         return {

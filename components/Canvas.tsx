@@ -9,22 +9,20 @@ import type { CanvasNode } from '../types';
 const Canvas: React.FC = () => {
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { nodes, selectedNodeIds, stage, setStage, setStageRef, clearSelection, deleteSelectedNodes, editingNodeId } = useCanvasState(state => ({
-      nodes: state.nodes,
-      selectedNodeIds: state.selectedNodeIds,
-      stage: state.stage,
-      setStage: state.setStage,
-      setStageRef: state.setStageRef,
-      clearSelection: state.clearSelection,
-      deleteSelectedNodes: state.deleteSelectedNodes,
-      editingNodeId: state.editingNodeId,
-  }));
+  const nodes = useCanvasState(state => state.nodes);
+  const selectedNodeIds = useCanvasState(state => state.selectedNodeIds);
+  const setStage = useCanvasState(state => state.setStage);
+  const clearSelection = useCanvasState(state => state.clearSelection);
+  const deleteSelectedNodes = useCanvasState(state => state.deleteSelectedNodes);
+  const editingNodeId = useCanvasState(state => state.editingNodeId);
 
   const editingNode = editingNodeId ? nodes[editingNodeId] : null;
 
   useEffect(() => {
-    setStageRef(stageRef);
-  }, []);
+    if (stageRef.current) {
+      setStage(stageRef.current);
+    }
+  }, [setStage]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -74,7 +72,6 @@ const Canvas: React.FC = () => {
     
     stage.scale({ x: newScale, y: newScale });
     stage.position(newPos);
-    setStage(newScale, newPos);
   };
   
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -91,12 +88,7 @@ const Canvas: React.FC = () => {
         height={window.innerHeight}
         draggable={!editingNodeId}
         onWheel={handleWheel}
-        onDragEnd={(e) => setStage(stage.scale, e.target.position())}
         onClick={handleStageClick}
-        scaleX={stage.scale}
-        scaleY={stage.scale}
-        x={stage.position.x}
-        y={stage.position.y}
       >
         <Layer>
           {Object.values(nodes).map((node: CanvasNode) => (
