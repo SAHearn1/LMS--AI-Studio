@@ -16,12 +16,10 @@ const NodeComponent: React.FC<NodeComponentProps> = ({ node, isSelected }) => {
   const shapeRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
   
-  const { selectNode, handleDragEnd, updateNode, editingNodeId } = useCanvasState((state) => ({
-    selectNode: state.selectNode,
-    handleDragEnd: state.handleDragEnd,
-    updateNode: state.updateNode,
-    editingNodeId: state.editingNodeId,
-  }));
+  const selectNode = useCanvasState(state => state.selectNode);
+  const handleDragEnd = useCanvasState(state => state.handleDragEnd);
+  const updateNode = useCanvasState(state => state.updateNode);
+  const editingNodeId = useCanvasState(state => state.editingNodeId);
 
   const isEditing = editingNodeId === node.id;
 

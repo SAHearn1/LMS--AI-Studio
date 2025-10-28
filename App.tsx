@@ -8,14 +8,10 @@ import VideoPlayerModal from './components/VideoPlayerModal';
 import { useCanvasState } from './hooks/useCanvasState';
 
 const App: React.FC = () => {
-  const { zoomIn, zoomOut, zoomToFit, modal } = useCanvasState(
-    (state) => ({
-      zoomIn: state.zoomIn,
-      zoomOut: state.zoomOut,
-      zoomToFit: state.zoomToFit,
-      modal: state.modal,
-    })
-  );
+  const zoomIn = useCanvasState(state => state.zoomIn);
+  const zoomOut = useCanvasState(state => state.zoomOut);
+  const zoomToFit = useCanvasState(state => state.zoomToFit);
+  const modal = useCanvasState(state => state.modal);
   
   return (
     <div className="w-screen h-screen font-sans antialiased relative overflow-hidden">

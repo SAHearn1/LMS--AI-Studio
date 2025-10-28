@@ -7,11 +7,9 @@ interface TextEditorProps {
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({ node }) => {
-    const { updateNodeData, setEditingNodeId, stageRef } = useCanvasState(state => ({
-        updateNodeData: state.updateNodeData,
-        setEditingNodeId: state.setEditingNodeId,
-        stageRef: state.stageRef
-    }));
+    const updateNodeData = useCanvasState(state => state.updateNodeData);
+    const setEditingNodeId = useCanvasState(state => state.setEditingNodeId);
+    const stage = useCanvasState(state => state.stage);
     const [value, setValue] = useState(node.data.text);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -34,8 +32,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ node }) => {
         }
     };
     
-    if (!stageRef?.current) return null;
-    const stage = stageRef.current;
+    if (!stage) return null;
     
     const textNodePosition = { x: node.position.x, y: node.position.y };
     const stageScale = stage.scaleX();

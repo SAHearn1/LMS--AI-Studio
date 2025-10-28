@@ -5,12 +5,10 @@ import { NodeType } from '../types';
 import Modal from './common/Modal';
 
 const AIGenerationModal: React.FC = () => {
-    const { modal, closeModal, addNode, updateNodeData } = useCanvasState(state => ({
-        modal: state.modal,
-        closeModal: state.closeModal,
-        addNode: state.addNode,
-        updateNodeData: state.updateNodeData,
-    }));
+    const modal = useCanvasState(state => state.modal);
+    const closeModal = useCanvasState(state => state.closeModal);
+    const addNode = useCanvasState(state => state.addNode);
+    const updateNodeData = useCanvasState(state => state.updateNodeData);
     const [prompt, setPrompt] = useState(modal.type === 'IMAGE_EDIT' ? modal.data.node?.data?.prompt || '' : '');
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '16:9' | '9:16' | '4:3' | '3:4'>('1:1');
     const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');

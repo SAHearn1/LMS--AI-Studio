@@ -50,7 +50,7 @@ const ImageNode: React.FC<ImageNodeProps> = ({ node, isSelected }) => {
                  updateNodeData<ImageNodeType['data']>(node.id, { base64 });
              }).catch(err => console.error("Failed to convert image to base64", err));
         }
-    }, [status, image, node.id, node.data.src, node.data.base64, updateNodeData]);
+    }, [status, image, node.id, node.data.src, node.data.base64]);
 
     const handleAnalyze = async (e: KonvaEventObject<MouseEvent | PointerEvent>) => {
         e.evt.stopPropagation();

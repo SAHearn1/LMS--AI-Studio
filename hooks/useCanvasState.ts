@@ -22,7 +22,7 @@ interface CanvasState {
     scale: number;
     position: NodePosition;
   };
-  stageRef: React.RefObject<Stage> | null;
+  stage: Stage | null;
   editingNodeId: string | null;
   modal: {
     type: ModalType;
@@ -31,7 +31,7 @@ interface CanvasState {
 }
 
 interface CanvasActions {
-  setStageRef: (ref: React.RefObject<Stage>) => void;
+  setStage: (stage: Stage | null) => void;
   addNode: (node: Omit<CanvasNode, 'id'>) => CanvasNode;
   updateNode: (id: string, updatedNode: Partial<CanvasNode>) => void;
   updateNodeData: <T>(id: string, data: Partial<T>) => void;
@@ -39,7 +39,6 @@ interface CanvasActions {
   selectNode: (id: string, multiSelect?: boolean) => void;
   clearSelection: () => void;
   handleDragEnd: (e: KonvaEventObject<DragEvent>, id: string) => void;
-  setStage: (scale: number, position: NodePosition) => void;
   zoomIn: () => void;
   zoomOut: () => void;
   zoomToFit: () => void;
@@ -71,13 +70,12 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
     nodes: defaultNodes,
     connections: {},
     selectedNodeIds: [],
-    stage: { scale: 1, position: { x: 0, y: 0 } },
-    stageRef: null,
+    stage: null,
     editingNodeId: null,
     modal: { type: null, data: null },
 
-    setStageRef: (ref) => {
-      set({ stageRef: ref });
+    setStage: (stage) => {
+      set({ stage });
     },
 
     addNode: (node) => {
@@ -135,29 +133,24 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
         }
       });
     },
-    setStage: (scale, position) => {
-      set({ stage: { scale, position } });
-    },
     zoomIn: () => {
-      const stage = get().stageRef?.current;
+      const stage = get().stage;
       if (!stage) return;
       const oldScale = stage.scaleX();
       const newScale = oldScale * 1.2;
       // TODO: zoom to center
       stage.scale({ x: newScale, y: newScale });
-      set({ stage: { scale: newScale, position: stage.position() }});
     },
     zoomOut: () => {
-      const stage = get().stageRef?.current;
+      const stage = get().stage;
       if (!stage) return;
       const oldScale = stage.scaleX();
       const newScale = oldScale / 1.2;
       // TODO: zoom to center
       stage.scale({ x: newScale, y: newScale });
-      set({ stage: { scale: newScale, position: stage.position() }});
     },
     zoomToFit: () => {
-        const stage = get().stageRef?.current;
+        const stage = get().stage;
         const nodes = Object.values(get().nodes);
         if (!stage || nodes.length === 0) return;
         
@@ -186,7 +179,6 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
         
         stage.scale({ x: newScale, y: newScale });
         stage.position({ x: newX, y: newY });
-        set({ stage: { scale: newScale, position: {x: newX, y: newY} }});
     },
     setEditingNodeId: (id) => {
       set({ editingNodeId: id, selectedNodeIds: id ? [id] : [] });
