@@ -7,7 +7,7 @@
     <title>RootWork Canvas</title>
     <!-- Emergency Button Fix: Ensures buttons are visible before Tailwind loads -->
     <style>
-      /* Emergency visibility fixes */
+      /* Emergency visibility fixes for buttons */
       button {
         display: inline-flex !important;
         align-items: center !important;
@@ -15,22 +15,6 @@
         cursor: pointer !important;
         opacity: 1 !important;
         visibility: visible !important;
-      }
-      
-      /* Ensure containers are visible */
-      .fixed, [class*="fixed"] {
-        position: fixed !important;
-        visibility: visible !important;
-      }
-      
-      .absolute, [class*="absolute"] {
-        position: absolute !important;
-        visibility: visible !important;
-      }
-      
-      /* Ensure z-index works */
-      [class*="z-"] {
-        z-index: auto !important;
       }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
