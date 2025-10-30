@@ -50,7 +50,7 @@ const Toolbar: React.FC = () => {
     ];
 
     return (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-lg flex items-center gap-2">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-lg flex items-center gap-2">
             {tools.map(tool => (
                 <button
                     key={tool.label}

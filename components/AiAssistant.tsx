@@ -50,7 +50,7 @@ const AiAssistant: React.FC = () => {
         <>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-4 right-4 z-20 bg-brand-green text-white p-3 rounded-full shadow-lg hover:bg-emerald-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
+                className="fixed bottom-4 right-4 z-50 bg-brand-green text-white p-3 rounded-full shadow-lg hover:bg-emerald-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
                 aria-label="Toggle AI Assistant"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,7 +58,7 @@ const AiAssistant: React.FC = () => {
                 </svg>
             </button>
 
-            <div className={`fixed bottom-20 right-4 z-10 w-full max-w-sm bg-white rounded-xl shadow-2xl flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`} style={{height: '60vh'}}>
+            <div className={`fixed bottom-20 right-4 z-50 w-full max-w-sm bg-white rounded-xl shadow-2xl flex flex-col transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`} style={{height: '60vh'}}>
                 <header className="p-4 border-b bg-slate-50 rounded-t-xl flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">AI Learning Assistant</h2>

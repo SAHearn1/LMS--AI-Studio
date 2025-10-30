@@ -32,18 +32,16 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-        <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onZoomToFit={zoomToFit} />
-        {lessonPlan && (
-           <div className="bg-white/80 backdrop-blur-sm p-1 rounded-lg shadow-md flex flex-col items-center gap-1">
-             <button onClick={toggleLessonPanel} className="p-2 rounded-md hover:bg-slate-200 transition-colors" title="Show/Hide Lesson Plan">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v11.494m-9-8.994v6.494c0 .566.474 1.022 1.055.998a8.043 8.043 0 014.288-1.996 8.043 8.043 0 014.288 1.996 1.04 1.04 0 001.055-.998V8.753c0-.566-.474-1.022-1.055-.998a8.043 8.043 0 01-4.288 1.996 8.043 8.043 0 01-4.288-1.996A1.04 1.04 0 003 8.753z" />
-                </svg>
-            </button>
-           </div>
-        )}
-      </div>
+      <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onZoomToFit={zoomToFit} />
+      {lessonPlan && (
+         <div className="fixed top-24 right-4 z-50 bg-white/80 backdrop-blur-sm p-1 rounded-lg shadow-md flex flex-col items-center gap-1">
+           <button onClick={toggleLessonPanel} className="p-2 rounded-md hover:bg-slate-200 transition-colors" title="Show/Hide Lesson Plan">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v11.494m-9-8.994v6.494c0 .566.474 1.022 1.055.998a8.043 8.043 0 014.288-1.996 8.043 8.043 0 014.288 1.996 1.04 1.04 0 001.055-.998V8.753c0-.566-.474-1.022-1.055-.998a8.043 8.043 0 01-4.288 1.996 8.043 8.043 0 01-4.288-1.996A1.04 1.04 0 003 8.753z" />
+              </svg>
+          </button>
+         </div>
+      )}
 
       <Canvas />
       <Toolbar />
