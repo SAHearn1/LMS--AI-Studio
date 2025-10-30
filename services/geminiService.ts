@@ -1,5 +1,5 @@
-import { GoogleGenAI, Modality, Type } from "@google/genai";
-import type { CanvasNode, ImageNodeData, TextNode } from "../types";
+import type { GoogleGenAI } from "@google/genai";
+import type { CanvasNode, ImageNodeData } from "../types";
 import { decode, decodeAudioData } from "../utils/helpers";
 
 const API_KEY = process.env.API_KEY;
@@ -8,7 +8,30 @@ if (!API_KEY) {
   console.error("Gemini API key not found. Please set the API_KEY environment variable.");
 }
 
-const getAi = () => new GoogleGenAI({ apiKey: API_KEY });
+type GenAiModule = typeof import("@google/genai");
+
+let genAiModulePromise: Promise<GenAiModule> | undefined;
+let aiClientPromise: Promise<GoogleGenAI> | undefined;
+
+const getGenAiModule = async (): Promise<GenAiModule> => {
+  if (!genAiModulePromise) {
+    genAiModulePromise = import("@google/genai");
+  }
+
+  return genAiModulePromise;
+};
+
+const getAi = async (): Promise<GoogleGenAI> => {
+  if (!API_KEY) {
+    throw new Error("Gemini API key is not configured.");
+  }
+
+  if (!aiClientPromise) {
+    aiClientPromise = getGenAiModule().then(({ GoogleGenAI }) => new GoogleGenAI({ apiKey: API_KEY }));
+  }
+
+  return aiClientPromise;
+};
 
 function serializeCanvasContent(nodes: Record<string, CanvasNode>, selectedNodeIds: string[]): string {
   if (Object.keys(nodes).length === 0) {
@@ -48,7 +71,7 @@ export const getAiAssistance = async (nodes: Record<string, CanvasNode>, selecte
   if (!API_KEY) {
     return "Error: Gemini API key is not configured.";
   }
-  const ai = getAi();
+  const ai = await getAi();
   const canvasContext = serializeCanvasContent(nodes, selectedNodeIds);
   
   const fullPrompt = `You are an AI assistant in 'RootWork Canvas', a visual learning tool for K-12 students with trauma and neurodivergence. Your tone should be encouraging, patient, and supportive. Act as a gentle guide or a curious learning partner.
@@ -79,7 +102,7 @@ export const getAiAssistance = async (nodes: Record<string, CanvasNode>, selecte
 
 export const generateImage = async (prompt: string, aspectRatio: '1:1' | '16:9' | '9:16' | '4:3' | '3:4'): Promise<string> => {
   if (!API_KEY) throw new Error("API key not configured");
-  const ai = getAi();
+  const ai = await getAi();
   const response = await ai.models.generateImages({
     model: 'imagen-4.0-generate-001',
     prompt,
@@ -95,7 +118,7 @@ export const generateImage = async (prompt: string, aspectRatio: '1:1' | '16:9' 
 export const analyzeImage = async (image: ImageNodeData, prompt: string): Promise<string> => {
   if (!API_KEY) throw new Error("API key not configured");
   if (!image.base64) throw new Error("Image data is missing");
-  const ai = getAi();
+  const ai = await getAi();
 
   const imagePart = {
     inlineData: {
@@ -115,7 +138,8 @@ export const analyzeImage = async (image: ImageNodeData, prompt: string): Promis
 export const editImage = async (image: ImageNodeData, prompt: string): Promise<string> => {
   if (!API_KEY) throw new Error("API key not configured");
   if (!image.base64) throw new Error("Image data is missing");
-  const ai = getAi();
+  const ai = await getAi();
+  const { Modality } = await getGenAiModule();
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
@@ -138,12 +162,12 @@ export const editImage = async (image: ImageNodeData, prompt: string): Promise<s
 
 export const generateVideo = async (prompt: string, aspectRatio: '16:9' | '9:16', image?: ImageNodeData) => {
   if (!API_KEY) throw new Error("API key not configured");
-  
+
   if (window.aistudio && !await window.aistudio.hasSelectedApiKey()) {
     await window.aistudio.openSelectKey();
   }
-  
-  const ai = getAi();
+
+  const ai = await getAi();
 
   let operation = await ai.models.generateVideos({
     model: 'veo-3.1-fast-generate-preview',
@@ -171,7 +195,8 @@ export const generateVideo = async (prompt: string, aspectRatio: '16:9' | '9:16'
 
 export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
   if (!API_KEY) throw new Error("API key not configured");
-  const ai = getAi();
+  const ai = await getAi();
+  const { Modality } = await getGenAiModule();
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
     contents: [{ parts: [{ text: `Say calmly and clearly: ${text}` }] }],
