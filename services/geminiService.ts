@@ -9,6 +9,18 @@ if (!geminiApiKey) {
 
 const getAi = () => genAI;
 
+/**
+ * Creates an AudioContext instance using the standard API with fallback to webkit prefix.
+ * Throws an error if AudioContext is not supported in the browser.
+ */
+function createAudioContext(options?: AudioContextOptions): AudioContext {
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContextClass) {
+    throw new Error("AudioContext is not supported in this browser");
+  }
+  return new AudioContextClass(options);
+}
+
 function serializeCanvasContent(nodes: Record<string, CanvasNode>, selectedNodeIds: string[]): string {
   if (Object.keys(nodes).length === 0) {
     return "The canvas is currently empty.";
@@ -190,12 +202,7 @@ export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
   const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   if (!base64Audio) throw new Error("No audio data returned");
 
-  // Use standard AudioContext (avoid deprecated webkitAudioContext)
-  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextClass) {
-    throw new Error("AudioContext is not supported in this browser");
-  }
-  const outputAudioContext = new AudioContextClass({ sampleRate: 24000 });
+  const outputAudioContext = createAudioContext({ sampleRate: 24000 });
   const audioBuffer = await decodeAudioData(
     decode(base64Audio),
     outputAudioContext,
@@ -206,12 +213,7 @@ export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
 };
 
 export const playAudio = (buffer: AudioBuffer) => {
-    // Use standard AudioContext (avoid deprecated webkitAudioContext)
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) {
-      throw new Error("AudioContext is not supported in this browser");
-    }
-    const context = new AudioContextClass();
+    const context = createAudioContext();
     const source = context.createBufferSource();
     source.buffer = buffer;
     source.connect(context.destination);
