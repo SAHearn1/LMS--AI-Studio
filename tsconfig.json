@@ -21,6 +21,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@google/generative-ai": [
+        "./utils/googleGenerativeAiShim.ts"
       ]
     },
     "allowImportingTsExtensions": true,
