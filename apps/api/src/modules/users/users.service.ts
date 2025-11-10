@@ -29,6 +29,7 @@ export class UsersService {
       throw new ConflictException('Email already exists');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = createUserDto;
     const newUser: User = {
       id: String(this.idCounter++),
@@ -84,6 +85,7 @@ export class UsersService {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...updateWithoutPassword } = updateUserDto;
     const updatedUser = {
       ...this.users[userIndex],
