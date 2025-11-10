@@ -1,3 +1,66 @@
+# Root Work Framework LMS API
+
+Trauma-Informed, Healing-Centered K-12 Learning Management System API
+
+## Overview
+
+This is a NestJS-based modular monolith API that provides backend services for the Root Work Framework LMS.
+
+## Architecture
+
+The API follows a modular monolith architecture with the following modules:
+
+- **Auth**: Authentication & authorization
+- **Users**: User management
+- **Curriculum**: Curriculum & lesson plans
+- **Learning**: Courses, assignments, assessments
+- **AI**: AI services (lesson generation, tutoring, crisis detection)
+- **Garden**: Virtual garden management
+- **Compliance**: IEP, 504, audit trails
+- **Analytics**: Reporting and dashboards
+- **Communications**: Notifications, messaging
+- **Integrations**: LTI, OneRoster, SIS integrations
+
+## Features
+
+- ✅ Global API prefix (`/api/v1`)
+- ✅ CORS enabled
+- ✅ Global validation pipes
+- ✅ Swagger API documentation
+- ✅ JWT authentication ready
+- ✅ Rate limiting support
+- ✅ Job queue support (Bull)
+- ✅ Event emitter for event-driven architecture
+- ✅ Redis support
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v20.x or higher)
+- pnpm (v10.x or higher)
+
+### Installation
+
+```bash
+pnpm install
+```
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure the required variables:
+
+```bash
+cp .env.example .env
+```
+
+## API Documentation
+
+Once the application is running, visit:
+- Swagger UI: `http://localhost:3001/api/docs`
+
+---
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
