@@ -1,13 +1,19 @@
 import type { CanvasNode, ImageNodeData } from "../types";
 import { decode, decodeAudioData } from "../utils/helpers";
-import { genAI, geminiApiKey } from "../src/lib/gemini";
+import { genAI, geminiApiKey, ensureApiKey } from "../src/lib/gemini";
 import { Modality } from "@google/generative-ai";
 
 if (!geminiApiKey) {
-  console.error("Gemini API key not found. Please set the VITE_GEMINI_API_KEY environment variable.");
+  console.warn("Gemini API key not found. Canvas AI features will be unavailable.");
 }
 
-const getAi = () => genAI;
+const getAi = () => {
+  ensureApiKey();
+  if (!genAI) {
+    throw new Error("Gemini AI is not initialized");
+  }
+  return genAI;
+};
 
 /**
  * Creates an AudioContext instance using the standard API with fallback to webkit prefix.
