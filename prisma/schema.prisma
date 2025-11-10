@@ -1,0 +1,954 @@
+// Root Work Framework LMS - Prisma Schema
+// Complete database schema for educational, wellness, and IEP management
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CORE ORGANIZATIONAL ENTITIES
+// ============================================================================
+
+model Tenant {
+  id       String  @id @default(cuid())
+  name     String
+  domain   String  @unique
+  isActive Boolean @default(true)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  districts District[]
+  schools   School[]
+  users     User[]
+
+  @@index([domain])
+  @@index([isActive])
+  @@map("tenants")
+}
+
+model District {
+  id       String @id @default(cuid())
+  name     String
+  code     String @unique
+  tenantId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  schools School[] @relation("DistrictSchools")
+
+  @@index([tenantId])
+  @@index([code])
+  @@map("districts")
+}
+
+model School {
+  id         String  @id @default(cuid())
+  name       String
+  code       String
+  districtId String
+  tenantId   String
+  address    String?
+  phone      String?
+  email      String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  district               District                @relation("DistrictSchools", fields: [districtId], references: [id])
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users                  User[]
+  courses                Course[]
+  emotionalCheckIns      EmotionalCheckIn[]
+  healingCircles         HealingCircle[]
+  restorativeConferences RestorativeConference[]
+
+  @@unique([code, tenantId])
+  @@index([districtId])
+  @@index([tenantId])
+  @@map("schools")
+}
+
+// ============================================================================
+// USER MANAGEMENT
+// ============================================================================
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  PARENT
+  ADMINISTRATOR
+  COUNSELOR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  role      UserRole
+  schoolId  String
+  tenantId  String
+  isActive  Boolean  @default(true)
+
+  // FERPA-sensitive data
+  dateOfBirth      DateTime? // @sensitive
+  ssn              String? // @sensitive (encrypted)
+  address          String? // @sensitive
+  phone            String? // @sensitive
+  emergencyContact String? // @sensitive
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  school                            School                             @relation(fields: [schoolId], references: [id])
+  tenant                            Tenant                             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  enrollments                       Enrollment[]
+  teachingCourses                   Course[]                           @relation("CourseTeacher")
+  assignments                       AssignmentSubmission[]
+  assessmentResults                 AssessmentResult[]
+  ieps                              IEP[]                              @relation("StudentIEP")
+  iepsAsCoordinator                 IEP[]                              @relation("IEPCoordinator")
+  emotionalCheckIns                 EmotionalCheckIn[]
+  gardenActivities                  GardenActivity[]
+  healingCircleParticipants         HealingCircleParticipant[]
+  restorativeConferenceParticipants RestorativeConferenceParticipant[]
+  lessonPlans                       LessonPlan[]
+  parentRelationships               ParentStudentRelationship[]        @relation("ParentUser")
+  childRelationships                ParentStudentRelationship[]        @relation("ChildUser")
+  createdGoals                      Goal[]                             @relation("GoalCreator")
+  createdAccommodations             Accommodation[]                    @relation("AccommodationCreator")
+  createdServices                   Service[]                          @relation("ServiceCreator")
+
+  @@index([email])
+  @@index([schoolId])
+  @@index([tenantId])
+  @@index([role])
+  @@map("users")
+}
+
+model ParentStudentRelationship {
+  id           String  @id @default(cuid())
+  parentId     String
+  studentId    String
+  relationship String // e.g., "Mother", "Father", "Guardian"
+  isPrimary    Boolean @default(false)
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  parent  User @relation("ParentUser", fields: [parentId], references: [id], onDelete: Cascade)
+  student User @relation("ChildUser", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("parent_student_relationships")
+}
+
+// ============================================================================
+// ACADEMIC ENTITIES
+// ============================================================================
+
+model Course {
+  id          String    @id @default(cuid())
+  name        String
+  code        String
+  description String?
+  teacherId   String
+  schoolId    String
+  tenantId    String
+  isActive    Boolean   @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  teacher     User         @relation("CourseTeacher", fields: [teacherId], references: [id])
+  school      School       @relation(fields: [schoolId], references: [id])
+  enrollments Enrollment[]
+  lessons     Lesson[]
+
+  @@index([teacherId])
+  @@index([schoolId])
+  @@index([tenantId])
+  @@index([code])
+  @@map("courses")
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  userId     String
+  courseId   String
+  enrolledAt DateTime @default(now())
+  status     String   @default("active") // active, completed, dropped, withdrawn
+  grade      String?
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("enrollments")
+}
+
+model Lesson {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  content     String? @db.Text
+  courseId    String
+  orderIndex  Int
+  isPublished Boolean @default(false)
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  assessments Assessment[]
+
+  @@index([courseId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([orderIndex])
+  @@map("lessons")
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  lessonId    String
+  dueDate     DateTime?
+  maxPoints   Int       @default(100)
+  isPublished Boolean   @default(false)
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  lesson      Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+
+  @@index([lessonId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([dueDate])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String   @id @default(cuid())
+  assignmentId String
+  userId       String
+  content      String?  @db.Text
+  attachments  String? // JSON array of file URLs
+  submittedAt  DateTime @default(now())
+  grade        Float?
+  feedback     String?  @db.Text
+  status       String   @default("submitted") // submitted, graded, returned
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("assignment_submissions")
+}
+
+model Assessment {
+  id             String  @id @default(cuid())
+  title          String
+  description    String? @db.Text
+  lessonId       String
+  assessmentType String // quiz, test, exam, project
+  maxPoints      Int     @default(100)
+  timeLimit      Int? // in minutes
+  isPublished    Boolean @default(false)
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  lesson    Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions AssessmentQuestion[]
+  results   AssessmentResult[]
+
+  @@index([lessonId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("assessments")
+}
+
+model AssessmentQuestion {
+  id            String  @id @default(cuid())
+  assessmentId  String
+  questionText  String  @db.Text
+  questionType  String // multiple_choice, true_false, short_answer, essay
+  options       String? // JSON array for multiple choice
+  correctAnswer String? @db.Text
+  points        Int     @default(1)
+  orderIndex    Int
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("assessment_questions")
+}
+
+model AssessmentResult {
+  id           String   @id @default(cuid())
+  assessmentId String
+  userId       String
+  answers      String?  @db.Text // JSON object with answers
+  score        Float
+  maxScore     Int
+  percentage   Float
+  completedAt  DateTime @default(now())
+  timeSpent    Int? // in minutes
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, userId])
+  @@index([assessmentId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("assessment_results")
+}
+
+// ============================================================================
+// IEP & SPECIAL EDUCATION ENTITIES
+// ============================================================================
+
+model IEP {
+  id                  String    @id @default(cuid())
+  studentId           String
+  coordinatorId       String
+  startDate           DateTime
+  endDate             DateTime
+  status              String    @default("active") // active, inactive, completed, archived
+  meetingDate         DateTime?
+  nextReviewDate      DateTime?
+  eligibilityCategory String?
+
+  // FERPA-sensitive data
+  disabilityDescription String? @db.Text // @sensitive
+  medicalInfo           String? @db.Text // @sensitive
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  student        User            @relation("StudentIEP", fields: [studentId], references: [id], onDelete: Cascade)
+  coordinator    User            @relation("IEPCoordinator", fields: [coordinatorId], references: [id])
+  goalAreas      GoalArea[]
+  accommodations Accommodation[]
+  services       Service[]
+
+  @@index([studentId])
+  @@index([coordinatorId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([status])
+  @@map("ieps")
+}
+
+model GoalArea {
+  id          String  @id @default(cuid())
+  iepId       String
+  name        String
+  description String? @db.Text
+  category    String // academic, behavioral, social, communication, motor
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  iep   IEP    @relation(fields: [iepId], references: [id], onDelete: Cascade)
+  goals Goal[]
+
+  @@index([iepId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("goal_areas")
+}
+
+model Goal {
+  id                  String   @id @default(cuid())
+  goalAreaId          String
+  description         String   @db.Text
+  measurementCriteria String   @db.Text
+  targetDate          DateTime
+  status              String   @default("in_progress") // in_progress, achieved, not_achieved, modified
+  progressNotes       String?  @db.Text
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  goalArea GoalArea @relation(fields: [goalAreaId], references: [id], onDelete: Cascade)
+  creator  User?    @relation("GoalCreator", fields: [createdBy], references: [id])
+
+  @@index([goalAreaId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([status])
+  @@map("goals")
+}
+
+model Accommodation {
+  id          String  @id @default(cuid())
+  iepId       String
+  type        String // instructional, environmental, assessment, behavioral
+  description String  @db.Text
+  frequency   String? // daily, weekly, as_needed
+  responsible String? // who is responsible for implementing
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  iep     IEP   @relation(fields: [iepId], references: [id], onDelete: Cascade)
+  creator User? @relation("AccommodationCreator", fields: [createdBy], references: [id])
+
+  @@index([iepId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("accommodations")
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  iepId       String
+  serviceType String // speech_therapy, occupational_therapy, counseling, etc.
+  provider    String
+  frequency   String // e.g., "2x per week"
+  duration    Int // in minutes
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  iep     IEP   @relation(fields: [iepId], references: [id], onDelete: Cascade)
+  creator User? @relation("ServiceCreator", fields: [createdBy], references: [id])
+
+  @@index([iepId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("services")
+}
+
+// ============================================================================
+// VIRTUAL GARDEN & WELLNESS ENTITIES
+// ============================================================================
+
+model VirtualGarden {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+  isPublic    Boolean @default(false)
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  plants     Plant[]
+  activities GardenActivity[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("virtual_gardens")
+}
+
+model Plant {
+  id           String   @id @default(cuid())
+  gardenId     String
+  name         String
+  species      String?
+  description  String?  @db.Text
+  plantedDate  DateTime @default(now())
+  growthStage  String   @default("seed") // seed, sprout, growing, blooming, mature
+  healthStatus String   @default("healthy") // healthy, needs_water, needs_sun, wilting
+  symbolism    String?  @db.Text // What this plant represents for the student
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  garden VirtualGarden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+
+  @@index([gardenId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("plants")
+}
+
+model GardenActivity {
+  id             String  @id @default(cuid())
+  gardenId       String
+  userId         String
+  activityType   String // watering, pruning, fertilizing, harvesting, reflection
+  description    String? @db.Text
+  reflection     String? @db.Text // Student's reflection on the activity
+  emotionalState String? // How the student felt during this activity
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  garden VirtualGarden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([gardenId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("garden_activities")
+}
+
+// ============================================================================
+// SOCIAL-EMOTIONAL LEARNING (SEL) ENTITIES
+// ============================================================================
+
+model EmotionalCheckIn {
+  id               String  @id @default(cuid())
+  userId           String
+  emotionalState   String // happy, sad, anxious, angry, calm, excited, etc.
+  intensity        Int     @default(5) // 1-10 scale
+  notes            String? @db.Text
+  triggers         String? // JSON array of trigger factors
+  copingStrategies String? // JSON array of coping strategies used
+
+  // FERPA-sensitive data - emotional state is sensitive
+  // @sensitive
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([createdAt])
+  @@map("emotional_check_ins")
+}
+
+model HealingCircle {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  facilitator String
+  scheduledAt DateTime
+  duration    Int // in minutes
+  location    String?
+  topic       String?
+  status      String   @default("scheduled") // scheduled, in_progress, completed, cancelled
+  notes       String?  @db.Text
+
+  // FERPA-sensitive - healing circle content is sensitive
+  // @sensitive
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  school       School                     @relation(fields: [schoolId], references: [id])
+  participants HealingCircleParticipant[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([scheduledAt])
+  @@map("healing_circles")
+}
+
+model HealingCircleParticipant {
+  id              String  @id @default(cuid())
+  healingCircleId String
+  userId          String
+  role            String  @default("participant") // participant, facilitator, observer
+  attended        Boolean @default(false)
+  feedback        String? @db.Text
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  healingCircle HealingCircle @relation(fields: [healingCircleId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([healingCircleId, userId])
+  @@index([healingCircleId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("healing_circle_participants")
+}
+
+model RestorativeConference {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  facilitator String
+  scheduledAt DateTime
+  duration    Int // in minutes
+  location    String?
+  incident    String?  @db.Text // Description of the incident
+  outcome     String?  @db.Text // Resolution or action plan
+  status      String   @default("scheduled") // scheduled, in_progress, completed, cancelled
+
+  // FERPA-sensitive - restorative conference content is sensitive
+  // @sensitive
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  school       School                             @relation(fields: [schoolId], references: [id])
+  participants RestorativeConferenceParticipant[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([scheduledAt])
+  @@map("restorative_conferences")
+}
+
+model RestorativeConferenceParticipant {
+  id                      String  @id @default(cuid())
+  restorativeConferenceId String
+  userId                  String
+  role                    String // affected_party, responsible_party, supporter, facilitator
+  attended                Boolean @default(false)
+  agreement               String? @db.Text // What they agreed to do
+  feedback                String? @db.Text
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  restorativeConference RestorativeConference @relation(fields: [restorativeConferenceId], references: [id], onDelete: Cascade)
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restorativeConferenceId, userId])
+  @@index([restorativeConferenceId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("restorative_conference_participants")
+}
+
+// ============================================================================
+// AI & CURRICULUM ENTITIES
+// ============================================================================
+
+model LessonPlan {
+  id              String  @id @default(cuid())
+  title           String
+  description     String? @db.Text
+  subject         String
+  gradeLevel      String
+  duration        Int // in minutes
+  objectives      String  @db.Text // JSON array
+  materials       String? @db.Text // JSON array
+  activities      String  @db.Text // JSON array
+  assessment      String? @db.Text
+  differentiation String? @db.Text
+  standards       String? @db.Text // JSON array of standard IDs
+
+  // AI-related fields
+  aiGenerated Boolean @default(false)
+  aiPrompt    String? @db.Text
+  aiModel     String? // e.g., "gpt-4", "claude-3"
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  creator User? @relation(fields: [createdBy], references: [id])
+
+  @@index([subject])
+  @@index([gradeLevel])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([aiGenerated])
+  @@map("lesson_plans")
+}
+
+model CurriculumStandard {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  title       String
+  description String  @db.Text
+  subject     String
+  gradeLevel  String
+  category    String? // e.g., "Common Core", "NGSS", "State Standard"
+  parentId    String? // For hierarchical standards
+
+  // Row-level security
+  tenantId String
+  schoolId String
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  parent   CurriculumStandard?  @relation("StandardHierarchy", fields: [parentId], references: [id])
+  children CurriculumStandard[] @relation("StandardHierarchy")
+
+  @@index([code])
+  @@index([subject])
+  @@index([gradeLevel])
+  @@index([parentId])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("curriculum_standards")
+}
