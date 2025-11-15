@@ -1,0 +1,37 @@
+FROM node:18-alpine AS base
+
+RUN npm install -g pnpm@8.11.0
+
+FROM base AS dependencies
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/*/package.json ./packages/*/
+
+RUN pnpm install --frozen-lockfile
+
+FROM base AS build
+
+WORKDIR /app
+
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+RUN pnpm build --filter=web
+
+FROM base AS production
+
+WORKDIR /app
+
+COPY --from=build /app/apps/web/.next ./.next
+COPY --from=build /app/apps/web/public ./public
+COPY --from=build /app/apps/web/package.json ./
+COPY --from=build /app/node_modules ./node_modules
+
+ENV NODE_ENV=production
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
