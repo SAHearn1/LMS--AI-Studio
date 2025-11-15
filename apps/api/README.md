@@ -1,151 +1,161 @@
-# LMS API
+# Root Work Framework LMS API
 
-A NestJS-based Learning Management System API with comprehensive CRUD operations for managing educational resources.
+Trauma-Informed, Healing-Centered K-12 Learning Management System API
+
+## Overview
+
+This is a NestJS-based modular monolith API that provides backend services for the Root Work Framework LMS.
+
+## Architecture
+
+The API follows a modular monolith architecture with the following modules:
+
+- **Auth**: Authentication & authorization
+- **Users**: User management
+- **Curriculum**: Curriculum & lesson plans
+- **Learning**: Courses, assignments, assessments
+- **AI**: AI services (lesson generation, tutoring, crisis detection)
+- **Garden**: Virtual garden management
+- **Compliance**: IEP, 504, audit trails
+- **Analytics**: Reporting and dashboards
+- **Communications**: Notifications, messaging
+- **Integrations**: LTI, OneRoster, SIS integrations
 
 ## Features
 
-### Modules
-
-- **Users Module**: User management with role-based access control
-- **Curriculum Module**: Curriculum management for different grade levels and subjects
-- **Learning Modules**:
-  - **Courses**: Course creation and management
-  - **Lessons**: Lesson content management within courses
-  - **Assignments**: Assignment creation and tracking
-- **Compliance Module**: IEP (Individualized Education Program) management
-- **Garden Module**: Gamification elements for student engagement
-
-### Best Practices Implemented
-
-- ✅ ValidationPipe with class-validator for input validation
-- ✅ Proper error handling with HTTP exceptions
-- ✅ Role-based guards for authorization
-- ✅ Pagination support for all list endpoints
-- ✅ Comprehensive Swagger/OpenAPI documentation
-- ✅ DTOs for request/response validation
-- ✅ Service layer pattern for business logic
-- ✅ In-memory data storage (ready for database integration)
+- ✅ Global API prefix (`/api/v1`)
+- ✅ CORS enabled
+- ✅ Global validation pipes
+- ✅ Swagger API documentation
+- ✅ JWT authentication ready
+- ✅ Rate limiting support
+- ✅ Job queue support (Bull)
+- ✅ Event emitter for event-driven architecture
+- ✅ Redis support
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v20 or higher)
-- npm
+- Node.js (v20.x or higher)
+- pnpm (v10.x or higher)
 
 ### Installation
 
 ```bash
-npm install
+pnpm install
 ```
 
-### Running the Application
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure the required variables:
 
 ```bash
-# Development mode
-npm run start:dev
-
-# Production mode
-npm run build
-npm run start:prod
+cp .env.example .env
 ```
 
-### API Documentation
+## API Documentation
 
-Once the application is running, access the Swagger documentation at:
-```
-http://localhost:3001/api/docs
-```
+Once the application is running, visit:
+- Swagger UI: `http://localhost:3001/api/docs`
 
-## API Endpoints
+---
 
-### Users
-- `POST /users` - Create a new user
-- `GET /users` - Get all users (paginated)
-- `GET /users/:id` - Get user by ID
-- `PATCH /users/:id` - Update user
-- `DELETE /users/:id` - Delete user (Admin only)
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
 
-### Curriculum
-- `POST /curriculum` - Create curriculum (Teacher/Admin)
-- `GET /curriculum` - Get all curriculums (paginated)
-- `GET /curriculum/:id` - Get curriculum by ID
-- `PATCH /curriculum/:id` - Update curriculum (Teacher/Admin)
-- `DELETE /curriculum/:id` - Delete curriculum (Admin only)
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-### Courses
-- `POST /courses` - Create course (Teacher/Admin)
-- `GET /courses` - Get all courses (paginated)
-- `GET /courses/:id` - Get course by ID
-- `PATCH /courses/:id` - Update course (Teacher/Admin)
-- `DELETE /courses/:id` - Delete course (Admin only)
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-### Lessons
-- `POST /lessons` - Create lesson (Teacher/Admin)
-- `GET /lessons` - Get all lessons (paginated)
-- `GET /lessons/:id` - Get lesson by ID
-- `PATCH /lessons/:id` - Update lesson (Teacher/Admin)
-- `DELETE /lessons/:id` - Delete lesson (Admin only)
+## Description
 
-### Assignments
-- `POST /assignments` - Create assignment (Teacher/Admin)
-- `GET /assignments` - Get all assignments (paginated)
-- `GET /assignments/:id` - Get assignment by ID
-- `PATCH /assignments/:id` - Update assignment (Teacher/Admin)
-- `DELETE /assignments/:id` - Delete assignment (Admin only)
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-### Compliance (IEP)
-- `POST /compliance/ieps` - Create IEP (Teacher/Admin)
-- `GET /compliance/ieps` - Get all IEPs (paginated, Teacher/Admin)
-- `GET /compliance/ieps/:id` - Get IEP by ID (Teacher/Admin)
-- `PATCH /compliance/ieps/:id` - Update IEP (Teacher/Admin)
-- `DELETE /compliance/ieps/:id` - Delete IEP (Admin only)
+## Project setup
 
-### Garden
-- `POST /garden` - Create garden item
-- `GET /garden` - Get all garden items (paginated)
-- `GET /garden/:id` - Get garden item by ID
-- `PATCH /garden/:id` - Update garden item
-- `DELETE /garden/:id` - Delete garden item
-
-## Project Structure
-
-```
-apps/api/
-├── src/
-│   ├── main.ts                 # Application entry point
-│   ├── app.module.ts           # Root module
-│   ├── common/                 # Shared utilities
-│   │   ├── decorators/         # Custom decorators (roles, etc.)
-│   │   ├── dto/                # Common DTOs (pagination)
-│   │   └── guards/             # Auth guards (role-based)
-│   └── modules/                # Feature modules
-│       ├── users/              # User management
-│       ├── curriculum/         # Curriculum management
-│       ├── learning/           # Learning resources
-│       │   ├── courses/        # Course management
-│       │   ├── lessons/        # Lesson management
-│       │   └── assignments/    # Assignment management
-│       ├── compliance/         # IEP management
-│       └── garden/             # Gamification
-├── package.json
-├── tsconfig.json
-└── nest-cli.json
+```bash
+$ pnpm install
 ```
 
-## Technologies Used
+## Compile and run the project
 
-- **NestJS**: Progressive Node.js framework
-- **TypeScript**: Type-safe development
-- **Swagger/OpenAPI**: API documentation
-- **class-validator**: Input validation
-- **class-transformer**: Object transformation
+```bash
+# development
+$ pnpm run start
 
-## Future Enhancements
+# watch mode
+$ pnpm run start:dev
 
-- Database integration (PostgreSQL/TypeORM)
-- Authentication with JWT
-- File upload support
-- Real-time updates with WebSockets
-- Unit and integration tests
-- CI/CD pipeline
+# production mode
+$ pnpm run start:prod
+```
+
+## Run tests
+
+```bash
+# unit tests
+$ pnpm run test
+
+# e2e tests
+$ pnpm run test:e2e
+
+# test coverage
+$ pnpm run test:cov
+```
+
+## Deployment
+
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+
+```bash
+$ pnpm install -g @nestjs/mau
+$ mau deploy
+```
+
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+
+## Resources
+
+Check out a few resources that may come in handy when working with NestJS:
+
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+
+## Support
+
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+
+## Stay in touch
+
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
+
+## License
+
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
