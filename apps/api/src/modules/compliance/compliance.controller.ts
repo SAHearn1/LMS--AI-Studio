@@ -48,7 +48,7 @@ export class ComplianceController {
     status: HttpStatus.FORBIDDEN,
     description: 'Insufficient permissions.',
   })
-  async create(@Body() createIEPDto: CreateIEPDto): Promise<IEP> {
+  async create(@Body() createIEPDto: CreateIEPDto): Promise<any> {
     return this.complianceService.create(createIEPDto);
   }
 
@@ -77,7 +77,7 @@ export class ComplianceController {
     status: HttpStatus.FORBIDDEN,
     description: 'Insufficient permissions.',
   })
-  async findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResult<IEP>> {
+  async findAll(@Query() paginationDto: PaginationDto): Promise<any> {
     return this.complianceService.findAll(paginationDto.page, paginationDto.limit);
   }
 
@@ -99,7 +99,7 @@ export class ComplianceController {
     status: HttpStatus.FORBIDDEN,
     description: 'Insufficient permissions.',
   })
-  async findOne(@Param('id') id: string): Promise<IEP> {
+  async findOne(@Param('id') id: string): Promise<any> {
     return this.complianceService.findOne(id);
   }
 
@@ -124,7 +124,7 @@ export class ComplianceController {
   async update(
     @Param('id') id: string,
     @Body() updateIEPDto: UpdateIEPDto,
-  ): Promise<IEP> {
+  ): Promise<any> {
     return this.complianceService.update(id, updateIEPDto);
   }
 
@@ -145,7 +145,7 @@ export class ComplianceController {
     status: HttpStatus.FORBIDDEN,
     description: 'Insufficient permissions.',
   })
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.complianceService.remove(id);
   }
 }
