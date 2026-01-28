@@ -1,5 +1,25 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsEnum, IsNumber, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
+
+export enum LessonStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+}
+
+export enum LessonType {
+  VIDEO = 'VIDEO',
+  TEXT = 'TEXT',
+  QUIZ = 'QUIZ',
+  ASSIGNMENT = 'ASSIGNMENT',
+}
 
 export class CreateLessonDto {
   @ApiProperty({
@@ -10,44 +30,66 @@ export class CreateLessonDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Content of the lesson',
     example: 'In this lesson, we will learn about variables...',
   })
   @IsString()
-  @IsNotEmpty()
-  content: string;
+  @IsOptional()
+  content?: string;
 
   @ApiProperty({
     description: 'ID of the course this lesson belongs to',
     example: '123e4567-e89b-12d3-a456-426614174001',
   })
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   courseId: string;
 
   @ApiProperty({
     description: 'Order of the lesson in the course',
     example: 1,
+    minimum: 0,
   })
   @IsNumber()
-  @Min(1)
+  @Min(0)
   orderIndex: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Duration of the lesson in minutes',
     example: 45,
+    minimum: 1,
   })
   @IsNumber()
+  @IsOptional()
   @Min(1)
-  duration: number;
+  duration?: number;
 
-  @ApiProperty({
-    description: 'Status of the lesson',
-    example: 'draft',
-    enum: ['draft', 'published'],
+  @ApiPropertyOptional({
+    description: 'Type of lesson',
+    example: 'TEXT',
+    enum: LessonType,
+    default: LessonType.TEXT,
   })
-  @IsEnum(['draft', 'published'])
-  @IsNotEmpty()
-  status: string;
+  @IsEnum(LessonType)
+  @IsOptional()
+  type?: LessonType;
+
+  @ApiPropertyOptional({
+    description: 'Status of the lesson',
+    example: 'DRAFT',
+    enum: LessonStatus,
+    default: LessonStatus.DRAFT,
+  })
+  @IsEnum(LessonStatus)
+  @IsOptional()
+  status?: LessonStatus;
+
+  @ApiPropertyOptional({
+    description: 'Video URL for video lessons',
+    example: 'https://example.com/video.mp4',
+  })
+  @IsString()
+  @IsOptional()
+  videoUrl?: string;
 }

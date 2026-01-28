@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { UsersModule } from './modules/users/users.module';
 import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { LearningModule } from './modules/learning/learning.module';
@@ -22,6 +25,7 @@ import databaseConfig from './config/database.config';
       isGlobal: true,
       load: [appConfig, authConfig, databaseConfig],
     }),
+    PrismaModule,
     AuthModule,
     UsersModule,
     CurriculumModule,
@@ -34,6 +38,13 @@ import databaseConfig from './config/database.config';
     IntegrationsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Enable JWT auth globally - use @Public() decorator for public endpoints
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ComplianceService } from './compliance.service';
+import { ComplianceController } from './compliance.controller';
 
 @Module({
-  imports: [],
-  controllers: [],
+  controllers: [ComplianceController],
   providers: [ComplianceService],
   exports: [ComplianceService],
 })
