@@ -1,46 +1,107 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateCourseDto } from './dto/create-course.dto';
-import { UpdateCourseDto } from './dto/update-course.dto';
-import { Course } from './entities/course.entity';
-import { PaginatedResult } from '../../../common/dto/pagination.dto';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { CreateCourseDto, UpdateCourseDto } from './dto';
+import { CourseStatus as PrismaCourseStatus } from '@prisma/client';
 
 @Injectable()
 export class CoursesService {
-  private courses: Course[] = [];
-  private idCounter = 1;
+  constructor(private prisma: PrismaService) {}
 
-  async create(createCourseDto: CreateCourseDto): Promise<Course> {
-    const newCourse: Course = {
-      id: String(this.idCounter++),
-      ...createCourseDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.courses.push(newCourse);
-    return newCourse;
+  async create(dto: CreateCourseDto) {
+    return this.prisma.course.create({
+      data: {
+        title: dto.title,
+        description: dto.description,
+        instructorId: dto.instructorId,
+        curriculumId: dto.curriculumId,
+        duration: dto.duration,
+        thumbnail: dto.thumbnail,
+        status: (dto.status as PrismaCourseStatus) || PrismaCourseStatus.DRAFT,
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
   }
 
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<PaginatedResult<Course>> {
-    const total = this.courses.length;
-    const totalPages = Math.ceil(total / limit);
+  async findAll(page = 1, limit = 10, status?: string) {
     const skip = (page - 1) * limit;
-    const data = this.courses.slice(skip, skip + limit);
+
+    const where = status ? { status: status as PrismaCourseStatus } : {};
+
+    const [courses, total] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          instructor: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          _count: {
+            select: {
+              lessons: true,
+              assignments: true,
+              enrollments: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.course.count({ where }),
+    ]);
 
     return {
-      data,
+      data: courses,
       total,
       page,
       limit,
-      totalPages,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findOne(id: string): Promise<Course> {
-    const course = this.courses.find((c) => c.id === id);
+  async findOne(id: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        curriculum: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        lessons: {
+          orderBy: { orderIndex: 'asc' },
+        },
+        assignments: {
+          orderBy: { createdAt: 'desc' },
+        },
+        _count: {
+          select: {
+            enrollments: true,
+          },
+        },
+      },
+    });
 
     if (!course) {
       throw new NotFoundException(`Course with ID ${id} not found`);
@@ -49,30 +110,146 @@ export class CoursesService {
     return course;
   }
 
-  async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
-    const courseIndex = this.courses.findIndex((c) => c.id === id);
+  async update(id: string, dto: UpdateCourseDto) {
+    await this.findOne(id);
 
-    if (courseIndex === -1) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
-    }
-
-    const updatedCourse = {
-      ...this.courses[courseIndex],
-      ...updateCourseDto,
-      updatedAt: new Date(),
-    };
-
-    this.courses[courseIndex] = updatedCourse;
-    return updatedCourse;
+    return this.prisma.course.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        curriculumId: dto.curriculumId,
+        duration: dto.duration,
+        thumbnail: dto.thumbnail,
+        status: dto.status as PrismaCourseStatus,
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
   }
 
-  async remove(id: string): Promise<void> {
-    const courseIndex = this.courses.findIndex((c) => c.id === id);
+  async remove(id: string) {
+    await this.findOne(id);
 
-    if (courseIndex === -1) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
-    }
+    await this.prisma.course.delete({
+      where: { id },
+    });
+  }
 
-    this.courses.splice(courseIndex, 1);
+  async enrollStudent(courseId: string, studentId: string) {
+    await this.findOne(courseId);
+
+    return this.prisma.courseEnrollment.upsert({
+      where: {
+        courseId_studentId: {
+          courseId,
+          studentId,
+        },
+      },
+      create: {
+        courseId,
+        studentId,
+      },
+      update: {},
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+  }
+
+  async unenrollStudent(courseId: string, studentId: string) {
+    await this.findOne(courseId);
+
+    await this.prisma.courseEnrollment.delete({
+      where: {
+        courseId_studentId: {
+          courseId,
+          studentId,
+        },
+      },
+    });
+
+    return { message: 'Student unenrolled successfully' };
+  }
+
+  async getEnrollments(courseId: string) {
+    await this.findOne(courseId);
+
+    return this.prisma.courseEnrollment.findMany({
+      where: { courseId },
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            gradeLevel: true,
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+  }
+
+  async getStudentEnrollments(studentId: string) {
+    return this.prisma.courseEnrollment.findMany({
+      where: { studentId },
+      include: {
+        course: {
+          include: {
+            instructor: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            _count: {
+              select: {
+                lessons: true,
+                assignments: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+  }
+
+  async updateEnrollmentProgress(courseId: string, studentId: string, progress: number) {
+    return this.prisma.courseEnrollment.update({
+      where: {
+        courseId_studentId: {
+          courseId,
+          studentId,
+        },
+      },
+      data: {
+        progress,
+        completedAt: progress >= 100 ? new Date() : null,
+      },
+    });
   }
 }

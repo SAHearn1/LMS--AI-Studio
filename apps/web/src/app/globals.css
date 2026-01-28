@@ -1,46 +1,79 @@
 @import "tailwindcss";
 
 :root {
+  /* RootWork Brand Colors */
+  --evergreen: #082A19;
+  --deep-canopy: #001C10;
+  --leaf: #3B523A;
+  --gold-leaf: #D4C862;
+  --olive-gold: #96812A;
+  --canvas-light: #F2F4CA;
+  --charcoal: #2B2B2B;
+  
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #2B2B2B;
+  
+  --primary: #082A19;
+  --primary-foreground: #D4C862;
+  --secondary: #3B523A;
+  --secondary-foreground: #ffffff;
+  --accent: #D4C862;
+  --accent-foreground: #082A19;
+  --muted: #F2F4CA;
+  --muted-foreground: #3B523A;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #D4C862;
+  --radius: 0.5rem;
 }
 
 @theme inline {
-  /* Root Work Framework Brand Colors - Primary (Nature/Growth) */
+  /* RootWork Brand Colors - Evergreen Primary */
+  --color-evergreen: #082A19;
+  --color-deep-canopy: #001C10;
+  --color-leaf: #3B523A;
+  --color-gold-leaf: #D4C862;
+  --color-olive-gold: #96812A;
+  --color-canvas-light: #F2F4CA;
+  --color-charcoal: #2B2B2B;
+  
+  /* Primary palette based on Evergreen */
   --color-primary-50: #f0fdf4;
   --color-primary-100: #dcfce7;
   --color-primary-200: #bbf7d0;
   --color-primary-300: #86efac;
   --color-primary-400: #4ade80;
-  --color-primary-500: #22c55e;
-  --color-primary-600: #16a34a;
-  --color-primary-700: #15803d;
-  --color-primary-800: #166534;
-  --color-primary-900: #14532d;
+  --color-primary-500: #3B523A;
+  --color-primary-600: #166534;
+  --color-primary-700: #082A19;
+  --color-primary-800: #001C10;
+  --color-primary-900: #001008;
   
-  /* Secondary (Healing/Mindfulness) */
-  --color-secondary-50: #faf5ff;
-  --color-secondary-100: #f3e8ff;
-  --color-secondary-200: #e9d5ff;
-  --color-secondary-300: #d8b4fe;
-  --color-secondary-400: #c084fc;
-  --color-secondary-500: #a855f7;
-  --color-secondary-600: #9333ea;
-  --color-secondary-700: #7e22ce;
-  --color-secondary-800: #6b21a8;
-  --color-secondary-900: #581c87;
+  /* Secondary (Gold Leaf accents) */
+  --color-secondary-50: #fefce8;
+  --color-secondary-100: #fef9c3;
+  --color-secondary-200: #fef08a;
+  --color-secondary-300: #fde047;
+  --color-secondary-400: #D4C862;
+  --color-secondary-500: #96812A;
+  --color-secondary-600: #854d0e;
+  --color-secondary-700: #713f12;
+  --color-secondary-800: #422006;
+  --color-secondary-900: #1c1917;
   
-  /* Accent (Warmth/Connection) */
-  --color-accent-50: #fff7ed;
-  --color-accent-100: #ffedd5;
-  --color-accent-200: #fed7aa;
-  --color-accent-300: #fdba74;
-  --color-accent-400: #fb923c;
-  --color-accent-500: #f97316;
-  --color-accent-600: #ea580c;
-  --color-accent-700: #c2410c;
-  --color-accent-800: #9a3412;
-  --color-accent-900: #7c2d12;
+  /* Accent (Canvas Light) */
+  --color-accent-50: #fefff0;
+  --color-accent-100: #F2F4CA;
+  --color-accent-200: #e8eab0;
+  --color-accent-300: #d4d896;
+  --color-accent-400: #bbc07c;
+  --color-accent-500: #a0a862;
+  --color-accent-600: #858a48;
+  --color-accent-700: #6a6c2e;
+  --color-accent-800: #4f4e14;
+  --color-accent-900: #343000;
   
   /* Background and Foreground */
   --color-background: var(--background);
@@ -48,13 +81,18 @@
   
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Poppins', system-ui, sans-serif;
+  --font-display: 'Merriweather', Georgia, serif;
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #001C10;
+    --foreground: #F2F4CA;
+    --border: #3B523A;
+    --input: #3B523A;
+    --muted: #082A19;
+    --muted-foreground: #D4C862;
   }
 }
 
@@ -63,3 +101,23 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Utility classes for brand colors */
+.bg-evergreen { background-color: #082A19; }
+.bg-deep-canopy { background-color: #001C10; }
+.bg-leaf { background-color: #3B523A; }
+.bg-gold-leaf { background-color: #D4C862; }
+.bg-olive-gold { background-color: #96812A; }
+.bg-canvas-light { background-color: #F2F4CA; }
+
+.text-evergreen { color: #082A19; }
+.text-deep-canopy { color: #001C10; }
+.text-leaf { color: #3B523A; }
+.text-gold-leaf { color: #D4C862; }
+.text-olive-gold { color: #96812A; }
+.text-canvas-light { color: #F2F4CA; }
+.text-charcoal { color: #2B2B2B; }
+
+.border-evergreen { border-color: #082A19; }
+.border-gold-leaf { border-color: #D4C862; }
+.border-leaf { border-color: #3B523A; }

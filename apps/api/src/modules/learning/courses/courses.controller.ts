@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +25,11 @@ import { Course } from './entities/course.entity';
 import { PaginationDto, PaginatedResult } from '../../../common/dto/pagination.dto';
 import { Roles, Role } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+
+class EnrollStudentDto {
+  studentId: string;
+}
 
 @ApiTags('courses')
 @Controller('courses')
@@ -66,14 +72,21 @@ export class CoursesController {
     type: Number,
     description: 'Items per page',
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Filter by status',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Return all courses.',
   })
   async findAll(
     @Query() paginationDto: PaginationDto,
+    @Query('status') status?: string,
   ): Promise<PaginatedResult<Course>> {
-    return this.coursesService.findAll(paginationDto.page, paginationDto.limit);
+    return this.coursesService.findAll(paginationDto.page, paginationDto.limit, status);
   }
 
   @Get(':id')
@@ -87,7 +100,7 @@ export class CoursesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Course not found.',
   })
-  async findOne(@Param('id') id: string): Promise<Course> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Course> {
     return this.coursesService.findOne(id);
   }
 
@@ -110,7 +123,7 @@ export class CoursesController {
     description: 'Insufficient permissions.',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCourseDto: UpdateCourseDto,
   ): Promise<Course> {
     return this.coursesService.update(id, updateCourseDto);
@@ -133,7 +146,52 @@ export class CoursesController {
     status: HttpStatus.FORBIDDEN,
     description: 'Insufficient permissions.',
   })
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.coursesService.remove(id);
+  }
+
+  // Enrollment endpoints
+  @Post(':id/enroll')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Enroll a student in a course' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Student enrolled successfully.',
+  })
+  async enrollStudent(
+    @Param('id', ParseUUIDPipe) courseId: string,
+    @Body() dto: EnrollStudentDto,
+    @CurrentUser('id') currentUserId: string,
+  ) {
+    // If no studentId provided, enroll the current user
+    const studentId = dto.studentId || currentUserId;
+    return this.coursesService.enrollStudent(courseId, studentId);
+  }
+
+  @Delete(':id/enroll/:studentId')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unenroll a student from a course' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Student unenrolled successfully.',
+  })
+  async unenrollStudent(
+    @Param('id', ParseUUIDPipe) courseId: string,
+    @Param('studentId', ParseUUIDPipe) studentId: string,
+  ) {
+    return this.coursesService.unenrollStudent(courseId, studentId);
+  }
+
+  @Get(':id/enrollments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all enrollments for a course' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return all enrollments.',
+  })
+  async getEnrollments(@Param('id', ParseUUIDPipe) courseId: string) {
+    return this.coursesService.getEnrollments(courseId);
   }
 }
