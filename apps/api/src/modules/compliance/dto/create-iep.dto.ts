@@ -1,18 +1,27 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsNotEmpty,
-  IsString,
-  IsEnum,
   IsArray,
   IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
 } from 'class-validator';
+
+export enum IEPStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  ARCHIVED = 'ARCHIVED',
+}
 
 export class CreateIEPDto {
   @ApiProperty({
     description: 'ID of the student this IEP belongs to',
     example: '123e4567-e89b-12d3-a456-426614174001',
   })
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   studentId: string;
 
@@ -24,25 +33,24 @@ export class CreateIEPDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({
-    description: 'Goals defined in the IEP',
-    example: ['Improve reading comprehension', 'Develop social skills'],
-    isArray: true,
-    type: String,
+  @ApiPropertyOptional({
+    description: 'Description of the IEP',
+    example: 'Comprehensive educational plan for the academic year',
   })
-  @IsArray()
-  @IsString({ each: true })
-  goals: string[];
+  @IsString()
+  @IsOptional()
+  description?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Accommodations specified in the IEP',
     example: ['Extended time on tests', 'Preferential seating'],
     isArray: true,
-    type: String,
+    type: [String],
   })
   @IsArray()
   @IsString({ each: true })
-  accommodations: string[];
+  @IsOptional()
+  accommodations?: string[];
 
   @ApiProperty({
     description: 'Start date of the IEP',
@@ -50,7 +58,7 @@ export class CreateIEPDto {
   })
   @IsDateString()
   @IsNotEmpty()
-  startDate: Date;
+  startDate: string;
 
   @ApiProperty({
     description: 'End date of the IEP',
@@ -58,14 +66,15 @@ export class CreateIEPDto {
   })
   @IsDateString()
   @IsNotEmpty()
-  endDate: Date;
+  endDate: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Status of the IEP',
-    example: 'draft',
-    enum: ['draft', 'active', 'completed', 'archived'],
+    example: 'DRAFT',
+    enum: IEPStatus,
+    default: IEPStatus.DRAFT,
   })
-  @IsEnum(['draft', 'active', 'completed', 'archived'])
-  @IsNotEmpty()
-  status: string;
+  @IsEnum(IEPStatus)
+  @IsOptional()
+  status?: IEPStatus;
 }

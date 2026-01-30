@@ -1,46 +1,82 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateLessonDto } from './dto/create-lesson.dto';
-import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { Lesson } from './entities/lesson.entity';
-import { PaginatedResult } from '../../../common/dto/pagination.dto';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { CreateLessonDto, UpdateLessonDto } from './dto';
+import {
+  LessonStatus as PrismaLessonStatus,
+  LessonType as PrismaLessonType,
+} from '@rootwork/database';
 
 @Injectable()
 export class LessonsService {
-  private lessons: Lesson[] = [];
-  private idCounter = 1;
+  constructor(private prisma: PrismaService) {}
 
-  async create(createLessonDto: CreateLessonDto): Promise<Lesson> {
-    const newLesson: Lesson = {
-      id: String(this.idCounter++),
-      ...createLessonDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.lessons.push(newLesson);
-    return newLesson;
+  async create(dto: CreateLessonDto) {
+    return this.prisma.lesson.create({
+      data: {
+        title: dto.title,
+        content: dto.content,
+        courseId: dto.courseId,
+        orderIndex: dto.orderIndex,
+        duration: dto.duration,
+        type: (dto.type as PrismaLessonType) || PrismaLessonType.TEXT,
+        status: (dto.status as PrismaLessonStatus) || PrismaLessonStatus.DRAFT,
+        videoUrl: dto.videoUrl,
+      },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
   }
 
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<PaginatedResult<Lesson>> {
-    const total = this.lessons.length;
-    const totalPages = Math.ceil(total / limit);
+  async findAll(page = 1, limit = 10, courseId?: string) {
     const skip = (page - 1) * limit;
-    const data = this.lessons.slice(skip, skip + limit);
+    const where = courseId ? { courseId } : {};
+
+    const [lessons, total] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          course: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+        orderBy: [{ courseId: 'asc' }, { orderIndex: 'asc' }],
+      }),
+      this.prisma.lesson.count({ where }),
+    ]);
 
     return {
-      data,
+      data: lessons,
       total,
       page,
       limit,
-      totalPages,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findOne(id: string): Promise<Lesson> {
-    const lesson = this.lessons.find((l) => l.id === id);
+  async findOne(id: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            instructorId: true,
+          },
+        },
+      },
+    });
 
     if (!lesson) {
       throw new NotFoundException(`Lesson with ID ${id} not found`);
@@ -49,30 +85,72 @@ export class LessonsService {
     return lesson;
   }
 
-  async update(id: string, updateLessonDto: UpdateLessonDto): Promise<Lesson> {
-    const lessonIndex = this.lessons.findIndex((l) => l.id === id);
+  async update(id: string, dto: UpdateLessonDto) {
+    await this.findOne(id);
 
-    if (lessonIndex === -1) {
-      throw new NotFoundException(`Lesson with ID ${id} not found`);
-    }
-
-    const updatedLesson = {
-      ...this.lessons[lessonIndex],
-      ...updateLessonDto,
-      updatedAt: new Date(),
-    };
-
-    this.lessons[lessonIndex] = updatedLesson;
-    return updatedLesson;
+    return this.prisma.lesson.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        content: dto.content,
+        orderIndex: dto.orderIndex,
+        duration: dto.duration,
+        type: dto.type as PrismaLessonType,
+        status: dto.status as PrismaLessonStatus,
+        videoUrl: dto.videoUrl,
+      },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
   }
 
-  async remove(id: string): Promise<void> {
-    const lessonIndex = this.lessons.findIndex((l) => l.id === id);
+  async remove(id: string) {
+    await this.findOne(id);
 
-    if (lessonIndex === -1) {
-      throw new NotFoundException(`Lesson with ID ${id} not found`);
-    }
+    await this.prisma.lesson.delete({
+      where: { id },
+    });
 
-    this.lessons.splice(lessonIndex, 1);
+    return { message: `Lesson with ID ${id} deleted successfully` };
+  }
+
+  async markComplete(lessonId: string, studentId: string) {
+    await this.findOne(lessonId);
+
+    return this.prisma.lessonProgress.upsert({
+      where: {
+        lessonId_studentId: {
+          lessonId,
+          studentId,
+        },
+      },
+      create: {
+        lessonId,
+        studentId,
+        completed: true,
+        completedAt: new Date(),
+      },
+      update: {
+        completed: true,
+        completedAt: new Date(),
+      },
+    });
+  }
+
+  async getProgress(lessonId: string, studentId: string) {
+    return this.prisma.lessonProgress.findUnique({
+      where: {
+        lessonId_studentId: {
+          lessonId,
+          studentId,
+        },
+      },
+    });
   }
 }

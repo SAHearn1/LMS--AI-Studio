@@ -1,5 +1,19 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, IsEnum, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsEnum,
+  MinLength,
+  IsOptional,
+} from 'class-validator';
+
+export enum UserRole {
+  STUDENT = 'STUDENT',
+  TEACHER = 'TEACHER',
+  ADMIN = 'ADMIN',
+  PARENT = 'PARENT',
+}
 
 export class CreateUserDto {
   @ApiProperty({
@@ -13,11 +27,11 @@ export class CreateUserDto {
   @ApiProperty({
     description: 'Password for the user account',
     example: 'SecurePassword123',
-    minLength: 8,
+    minLength: 6,
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(6)
   password: string;
 
   @ApiProperty({
@@ -38,10 +52,27 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Role of the user',
-    example: 'user',
-    enum: ['user', 'teacher', 'admin'],
+    example: 'STUDENT',
+    enum: UserRole,
+    default: UserRole.STUDENT,
   })
-  @IsEnum(['user', 'teacher', 'admin'])
-  @IsNotEmpty()
-  role: string;
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+
+  @ApiPropertyOptional({
+    description: 'Avatar URL',
+    example: 'https://example.com/avatar.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  avatar?: string;
+
+  @ApiPropertyOptional({
+    description: 'User bio',
+    example: 'A passionate learner',
+  })
+  @IsString()
+  @IsOptional()
+  bio?: string;
 }

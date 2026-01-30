@@ -1,5 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+export enum CurriculumStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  ARCHIVED = 'ARCHIVED',
+}
 
 export class CreateCurriculumDto {
   @ApiProperty({
@@ -10,13 +16,13 @@ export class CreateCurriculumDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Description of the curriculum',
     example: 'Complete mathematics curriculum for grade 10 students',
   })
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @ApiProperty({
     description: 'Grade level for the curriculum',
@@ -34,12 +40,13 @@ export class CreateCurriculumDto {
   @IsNotEmpty()
   subject: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Status of the curriculum',
-    example: 'draft',
-    enum: ['draft', 'active', 'archived'],
+    example: 'DRAFT',
+    enum: CurriculumStatus,
+    default: CurriculumStatus.DRAFT,
   })
-  @IsEnum(['draft', 'active', 'archived'])
-  @IsNotEmpty()
-  status: string;
+  @IsEnum(CurriculumStatus)
+  @IsOptional()
+  status?: CurriculumStatus;
 }

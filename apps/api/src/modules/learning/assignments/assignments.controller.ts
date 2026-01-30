@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
   UseGuards,
   HttpStatus,
   ParseUUIDPipe,
@@ -15,15 +16,17 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiQuery,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AssignmentsService } from './assignments.service';
-import { CreateAssignmentDto } from './dto/create-assignment.dto';
-import { UpdateAssignmentDto } from './dto/update-assignment.dto';
-import { Assignment } from './entities/assignment.entity';
-import { PaginationDto, PaginatedResult } from '../../../common/dto/pagination.dto';
-import { Roles, Role } from '../../../common/decorators/roles.decorator';
+import {
+  CreateAssignmentDto,
+  UpdateAssignmentDto,
+  SubmitAssignmentDto,
+  GradeAssignmentDto,
+} from './dto';
+import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
@@ -38,14 +41,14 @@ class GradeSubmissionDto {
 }
 
 @ApiTags('assignments')
+@ApiBearerAuth()
 @Controller('assignments')
+@UseGuards(RolesGuard)
 export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
   @Post()
-  @Roles(Role.TEACHER, Role.ADMIN)
-  @UseGuards(RolesGuard)
-  @ApiBearerAuth()
+  @Roles('ADMIN', 'TEACHER')
   @ApiOperation({ summary: 'Create a new assignment' })
   @ApiResponse({
     status: HttpStatus.CREATED,

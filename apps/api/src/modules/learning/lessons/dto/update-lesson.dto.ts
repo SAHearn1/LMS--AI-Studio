@@ -1,4 +1,6 @@
-import { PartialType } from '@nestjs/swagger';
+import { PartialType, OmitType } from '@nestjs/swagger';
 import { CreateLessonDto } from './create-lesson.dto';
 
-export class UpdateLessonDto extends PartialType(CreateLessonDto) {}
+export class UpdateLessonDto extends PartialType(
+  OmitType(CreateLessonDto, ['courseId'] as const),
+) {}

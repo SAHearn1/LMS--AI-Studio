@@ -1,12 +1,21 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsNotEmpty,
-  IsString,
-  IsEnum,
-  IsNumber,
-  Min,
   IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
 } from 'class-validator';
+
+export enum AssignmentStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  CLOSED = 'CLOSED',
+}
 
 export class CreateAssignmentDto {
   @ApiProperty({
@@ -17,44 +26,50 @@ export class CreateAssignmentDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Description of the assignment',
     example: 'Complete the quiz on JavaScript functions',
   })
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @ApiProperty({
     description: 'ID of the course this assignment belongs to',
     example: '123e4567-e89b-12d3-a456-426614174001',
   })
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   courseId: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Due date for the assignment',
     example: '2024-02-15T23:59:59Z',
   })
   @IsDateString()
-  @IsNotEmpty()
-  dueDate: Date;
+  @IsOptional()
+  dueDate?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Maximum points for the assignment',
     example: 100,
+    minimum: 0,
+    maximum: 1000,
+    default: 100,
   })
   @IsNumber()
-  @Min(1)
-  maxPoints: number;
+  @IsOptional()
+  @Min(0)
+  @Max(1000)
+  maxPoints?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Status of the assignment',
-    example: 'draft',
-    enum: ['draft', 'published', 'closed'],
+    example: 'DRAFT',
+    enum: AssignmentStatus,
+    default: AssignmentStatus.DRAFT,
   })
-  @IsEnum(['draft', 'published', 'closed'])
-  @IsNotEmpty()
-  status: string;
+  @IsEnum(AssignmentStatus)
+  @IsOptional()
+  status?: AssignmentStatus;
 }

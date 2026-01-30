@@ -7,33 +7,36 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
   UseGuards,
-  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiQuery,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { ComplianceService } from './compliance.service';
-import { CreateIEPDto } from './dto/create-iep.dto';
-import { UpdateIEPDto } from './dto/update-iep.dto';
-import { IEP } from './entities/iep.entity';
-import { PaginationDto, PaginatedResult } from '../../common/dto/pagination.dto';
-import { Roles, Role } from '../../common/decorators/roles.decorator';
+import {
+  CreateIEPDto,
+  UpdateIEPDto,
+  CreateIEPGoalDto,
+  UpdateIEPGoalDto,
+} from './dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @ApiTags('compliance')
-@Controller('compliance/ieps')
+@ApiBearerAuth()
+@Controller('compliance')
+@UseGuards(RolesGuard)
 export class ComplianceController {
   constructor(private readonly complianceService: ComplianceService) {}
 
-  @Post()
-  @Roles(Role.TEACHER, Role.ADMIN)
-  @UseGuards(RolesGuard)
-  @ApiBearerAuth()
+  // IEP Endpoints
+  @Post('ieps')
+  @Roles('ADMIN', 'TEACHER')
   @ApiOperation({ summary: 'Create a new IEP' })
   @ApiResponse({
     status: HttpStatus.CREATED,

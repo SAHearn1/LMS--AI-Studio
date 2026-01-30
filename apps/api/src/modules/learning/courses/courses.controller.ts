@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
   UseGuards,
   HttpStatus,
   ParseUUIDPipe,
@@ -15,15 +16,12 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiQuery,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
-import { CreateCourseDto } from './dto/create-course.dto';
-import { UpdateCourseDto } from './dto/update-course.dto';
-import { Course } from './entities/course.entity';
-import { PaginationDto, PaginatedResult } from '../../../common/dto/pagination.dto';
-import { Roles, Role } from '../../../common/decorators/roles.decorator';
+import { CreateCourseDto, UpdateCourseDto } from './dto';
+import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
@@ -32,30 +30,18 @@ class EnrollStudentDto {
 }
 
 @ApiTags('courses')
+@ApiBearerAuth()
 @Controller('courses')
+@UseGuards(RolesGuard)
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Post()
-  @Roles(Role.TEACHER, Role.ADMIN)
-  @UseGuards(RolesGuard)
-  @ApiBearerAuth()
+  @Roles('ADMIN', 'TEACHER')
   @ApiOperation({ summary: 'Create a new course' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Course has been successfully created.',
-    type: Course,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data.',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Insufficient permissions.',
-  })
-  async create(@Body() createCourseDto: CreateCourseDto): Promise<Course> {
-    return this.coursesService.create(createCourseDto);
+  @ApiResponse({ status: 201, description: 'Course created successfully' })
+  async create(@Body() dto: CreateCourseDto) {
+    return this.coursesService.create(dto);
   }
 
   @Get()
@@ -105,23 +91,10 @@ export class CoursesController {
   }
 
   @Patch(':id')
-  @Roles(Role.TEACHER, Role.ADMIN)
-  @UseGuards(RolesGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a course' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Course has been successfully updated.',
-    type: Course,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Course not found.',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Insufficient permissions.',
-  })
+  @Roles('ADMIN', 'TEACHER')
+  @ApiOperation({ summary: 'Update course' })
+  @ApiResponse({ status: 200, description: 'Course updated successfully' })
+  @ApiResponse({ status: 404, description: 'Course not found' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCourseDto: UpdateCourseDto,
