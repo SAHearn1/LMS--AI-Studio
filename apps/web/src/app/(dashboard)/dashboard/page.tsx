@@ -2,84 +2,59 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import {
   BookOpen,
   Users,
   FileText,
   TrendingUp,
-  Clock,
   Plus,
   ArrowRight,
   GraduationCap,
   Award,
   Calendar,
+  LogOut,
 } from 'lucide-react';
-import { api } from '@/lib/api/client';
-import { useUserStore } from '@/stores/userStore';
-import { Course, Assignment, CourseEnrollment, PaginatedResponse } from '@/types';
 import { cn } from '@/lib/utils';
-import { format, isToday, isTomorrow, isPast } from 'date-fns';
 
-interface DashboardData {
-  stats: {
-    totalCourses: number;
-    totalStudents: number;
-    totalAssignments: number;
-    pendingGrades: number;
-  };
-  recentCourses: Course[];
-  upcomingAssignments: Assignment[];
-  recentEnrollments: CourseEnrollment[];
+interface DashboardStats {
+  totalCourses: number;
+  totalStudents: number;
+  totalAssignments: number;
+  pendingGrades: number;
 }
 
 export default function DashboardPage() {
-  const { user } = useUserStore();
-  const [data, setData] = useState<DashboardData | null>(null);
+  const { data: session, status } = useSession();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCourses: 0,
+    totalStudents: 0,
+    totalAssignments: 0,
+    pendingGrades: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
+  const user = session?.user;
   const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
   const isStudent = user?.role === 'STUDENT';
+  const isParent = user?.role === 'PARENT';
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [user?.role]);
-
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch courses
-      const coursesRes = await api.get<PaginatedResponse<Course>>('/courses?limit=5');
-      
-      // Fetch assignments
-      const assignmentsRes = await api.get<PaginatedResponse<Assignment>>('/assignments?status=PUBLISHED&limit=5');
-
-      setData({
-        stats: {
-          totalCourses: coursesRes.data?.total || 0,
-          totalStudents: 0, // Would come from dedicated stats endpoint
-          totalAssignments: assignmentsRes.data?.total || 0,
-          pendingGrades: 0,
-        },
-        recentCourses: coursesRes.data?.data || [],
-        upcomingAssignments: (assignmentsRes.data?.data || [])
-          .filter(a => a.dueDate && !isPast(new Date(a.dueDate)))
-          .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()),
-        recentEnrollments: [],
+    // Simulate fetching stats - replace with actual API call
+    const timer = setTimeout(() => {
+      setStats({
+        totalCourses: 2,
+        totalStudents: 4,
+        totalAssignments: 1,
+        pendingGrades: 0,
       });
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      setData({
-        stats: { totalCourses: 0, totalStudents: 0, totalAssignments: 0, pendingGrades: 0 },
-        recentCourses: [],
-        upcomingAssignments: [],
-        recentEnrollments: [],
-      });
-    } finally {
       setIsLoading(false);
-    }
-  };
+    }, 500);
 
-  if (isLoading) {
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (status === 'loading' || isLoading) {
     return (
       <div className="space-y-6">
         <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse" />
@@ -95,18 +70,35 @@ export default function DashboardPage() {
     );
   }
 
-  const stats = data?.stats || { totalCourses: 0, totalStudents: 0, totalAssignments: 0, pendingGrades: 0 };
+  const firstName = user?.name?.split(' ')[0] || 'User';
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-br from-evergreen to-leaf rounded-2xl p-8 text-white">
+      <div className="bg-gradient-to-br from-evergreen to-leaf rounded-2xl p-8 text-white relative overflow-hidden">
+        {/* Sign Out Button */}
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="absolute top-4 right-4 flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm"
+        >
+          <LogOut size={16} />
+          Sign Out
+        </button>
+
         <h1 className="font-display text-3xl font-bold mb-2">
-          Welcome back, {user?.firstName || 'User'}! 🌱
+          Welcome back, {firstName}! 🌱
         </h1>
-        <p className="text-canvas-light/80">
+        <p className="text-white/80 mb-1">
+          {user?.email}
+        </p>
+        <p className="text-white/60 text-sm">
+          Role: {user?.role}
+        </p>
+        <p className="text-white/80 mt-4">
           {isTeacher 
             ? "Here's an overview of your courses and students" 
+            : isParent
+            ? "Monitor your child's learning progress"
             : "Ready to continue your learning journey?"}
         </p>
         
@@ -174,9 +166,9 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Content Grid */}
+      {/* Content Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Courses */}
+        {/* Courses Section */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-lg text-charcoal">
@@ -187,53 +179,21 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {!data?.recentCourses || data.recentCourses.length === 0 ? (
-            <div className="text-center py-8 text-charcoal/60">
-              <BookOpen className="mx-auto h-10 w-10 mb-3 opacity-50" />
-              <p className="text-sm">No courses yet</p>
-              {isTeacher && (
-                <Link
-                  href="/courses/new"
-                  className="mt-3 inline-flex items-center gap-1 text-sm text-leaf hover:text-evergreen"
-                >
-                  <Plus size={16} /> Create your first course
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {data.recentCourses.slice(0, 4).map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/courses/${course.id}`}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-canvas-light/50 transition-colors"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-evergreen to-leaf flex items-center justify-center shrink-0">
-                    {course.thumbnail ? (
-                      <img src={course.thumbnail} alt="" className="w-full h-full object-cover rounded-lg" />
-                    ) : (
-                      <BookOpen className="text-gold-leaf/70" size={20} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-charcoal truncate">{course.title}</h3>
-                    <p className="text-sm text-charcoal/60">
-                      {course._count?.lessons || 0} lessons · {course._count?.enrollments || 0} students
-                    </p>
-                  </div>
-                  <span className={cn(
-                    'px-2 py-1 rounded-full text-xs font-medium shrink-0',
-                    course.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                  )}>
-                    {course.status}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="text-center py-8 text-charcoal/60">
+            <BookOpen className="mx-auto h-10 w-10 mb-3 opacity-50" />
+            <p className="text-sm">Course list coming soon</p>
+            {isTeacher && (
+              <Link
+                href="/courses/new"
+                className="mt-3 inline-flex items-center gap-1 text-sm text-leaf hover:text-evergreen"
+              >
+                <Plus size={16} /> Create your first course
+              </Link>
+            )}
+          </div>
         </div>
 
-        {/* Upcoming Assignments */}
+        {/* Assignments Section */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-lg text-charcoal">Upcoming Deadlines</h2>
@@ -242,49 +202,10 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {!data?.upcomingAssignments || data.upcomingAssignments.length === 0 ? (
-            <div className="text-center py-8 text-charcoal/60">
-              <Calendar className="mx-auto h-10 w-10 mb-3 opacity-50" />
-              <p className="text-sm">No upcoming deadlines</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {data.upcomingAssignments.slice(0, 4).map((assignment) => {
-                const dueDate = new Date(assignment.dueDate!);
-                const dueLabel = isToday(dueDate) ? 'Due Today' :
-                               isTomorrow(dueDate) ? 'Due Tomorrow' :
-                               `Due ${format(dueDate, 'MMM d')}`;
-                const isUrgent = isToday(dueDate);
-
-                return (
-                  <Link
-                    key={assignment.id}
-                    href={`/assignments/${assignment.id}`}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-canvas-light/50 transition-colors"
-                  >
-                    <div className={cn(
-                      'w-12 h-12 rounded-lg flex items-center justify-center shrink-0',
-                      isUrgent ? 'bg-red-100' : 'bg-gray-100'
-                    )}>
-                      <FileText className={isUrgent ? 'text-red-600' : 'text-charcoal/60'} size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-charcoal truncate">{assignment.title}</h3>
-                      <p className="text-sm text-charcoal/60">
-                        {assignment.maxPoints} points
-                      </p>
-                    </div>
-                    <span className={cn(
-                      'px-2 py-1 rounded-full text-xs font-medium shrink-0',
-                      isUrgent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                    )}>
-                      {dueLabel}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+          <div className="text-center py-8 text-charcoal/60">
+            <Calendar className="mx-auto h-10 w-10 mb-3 opacity-50" />
+            <p className="text-sm">No upcoming deadlines</p>
+          </div>
         </div>
       </div>
 
@@ -311,7 +232,31 @@ export default function DashboardPage() {
             <QuickActionCard
               icon={GraduationCap}
               label="My Garden"
-              href="/garden"
+              href="/student"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Parent View */}
+      {isParent && (
+        <div className="bg-canvas-light rounded-xl p-6">
+          <h2 className="font-semibold text-lg text-charcoal mb-4">Parent Dashboard</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <QuickActionCard
+              icon={Users}
+              label="My Children"
+              href="/parent"
+            />
+            <QuickActionCard
+              icon={TrendingUp}
+              label="Progress Reports"
+              href="/parent"
+            />
+            <QuickActionCard
+              icon={Calendar}
+              label="Upcoming Events"
+              href="/parent"
             />
           </div>
         </div>
