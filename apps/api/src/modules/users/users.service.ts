@@ -1,61 +1,15 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CreateUserDto, UpdateUserDto } from './dto';
-import { UserRole as PrismaUserRole } from '@rootwork/database';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaClient } from '../../../../../packages/database/generated/prisma';
+import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  private readonly SALT_ROUNDS = 12;
+  private prisma = new PrismaClient();
 
-  constructor(private prisma: PrismaService) {}
-
-  async create(dto: CreateUserDto) {
-    // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email.toLowerCase(),
-        passwordHash,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        role: (dto.role as PrismaUserRole) || PrismaUserRole.STUDENT,
-        avatar: dto.avatar,
-        bio: dto.bio,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        avatar: true,
-        bio: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    return user;
-  }
-
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-
+    
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
@@ -66,8 +20,6 @@ export class UsersService {
           firstName: true,
           lastName: true,
           role: true,
-          avatar: true,
-          isActive: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -78,10 +30,12 @@ export class UsersService {
 
     return {
       data: users,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -94,40 +48,41 @@ export class UsersService {
         firstName: true,
         lastName: true,
         role: true,
-        avatar: true,
-        bio: true,
-        isActive: true,
-        lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
+        enrollments: {
+          include: {
+            course: true,
+          },
+        },
       },
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException('User not found');
     }
 
     return user;
   }
 
-  async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+  async create(dto: CreateUserDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
     });
-  }
 
-  async update(id: string, dto: UpdateUserDto) {
-    await this.findOne(id); // Verify user exists
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
 
-    const user = await this.prisma.user.update({
-      where: { id },
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
       data: {
-        email: dto.email?.toLowerCase(),
+        email: dto.email,
+        password: hashedPassword,
         firstName: dto.firstName,
         lastName: dto.lastName,
-        role: dto.role as PrismaUserRole,
-        avatar: dto.avatar,
-        bio: dto.bio,
+        role: dto.role || 'STUDENT',
       },
       select: {
         id: true,
@@ -135,9 +90,6 @@ export class UsersService {
         firstName: true,
         lastName: true,
         role: true,
-        avatar: true,
-        bio: true,
-        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -146,41 +98,51 @@ export class UsersService {
     return user;
   }
 
+  async update(id: string, dto: UpdateUserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updateData: any = { ...dto };
+    
+    if (dto.password) {
+      updateData.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
   async remove(id: string) {
-    await this.findOne(id); // Verify user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     await this.prisma.user.delete({
       where: { id },
     });
 
-    return { message: `User with ID ${id} deleted successfully` };
-  }
-
-  async deactivate(id: string) {
-    await this.findOne(id);
-
-    return this.prisma.user.update({
-      where: { id },
-      data: { isActive: false },
-      select: {
-        id: true,
-        email: true,
-        isActive: true,
-      },
-    });
-  }
-
-  async activate(id: string) {
-    await this.findOne(id);
-
-    return this.prisma.user.update({
-      where: { id },
-      data: { isActive: true },
-      select: {
-        id: true,
-        email: true,
-        isActive: true,
-      },
-    });
+    return { message: 'User deleted successfully' };
   }
 }

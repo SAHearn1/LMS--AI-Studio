@@ -9,6 +9,8 @@ import {
   Query,
   ParseUUIDPipe,
   UseGuards,
+  HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,6 +30,16 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
+class SubmitAssignmentDto {
+  content?: string;
+  attachments?: string[];
+}
+
+class GradeSubmissionDto {
+  score: number;
+  feedback?: string;
+}
+
 @ApiTags('assignments')
 @ApiBearerAuth()
 @Controller('assignments')
@@ -38,85 +50,127 @@ export class AssignmentsController {
   @Post()
   @Roles('ADMIN', 'TEACHER')
   @ApiOperation({ summary: 'Create a new assignment' })
-  @ApiResponse({ status: 201, description: 'Assignment created successfully' })
-  async create(@Body() dto: CreateAssignmentDto) {
-    return this.assignmentsService.create(dto);
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Assignment has been successfully created.',
+    type: Assignment,
+  })
+  async create(
+    @Body() createAssignmentDto: CreateAssignmentDto,
+  ): Promise<Assignment> {
+    return this.assignmentsService.create(createAssignmentDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all assignments' })
+  @ApiOperation({ summary: 'Get all assignments with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, type: String })
   @ApiQuery({ name: 'courseId', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'List of assignments' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return all assignments.' })
   async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() paginationDto: PaginationDto,
+    @Query('status') status?: string,
     @Query('courseId') courseId?: string,
-  ) {
-    return this.assignmentsService.findAll(page || 1, limit || 10, courseId);
+  ): Promise<PaginatedResult<Assignment>> {
+    return this.assignmentsService.findAll(
+      paginationDto.page,
+      paginationDto.limit,
+      status,
+      courseId,
+    );
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get assignment by ID' })
-  @ApiResponse({ status: 200, description: 'Assignment found' })
-  @ApiResponse({ status: 404, description: 'Assignment not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+  @ApiOperation({ summary: 'Get an assignment by ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return the assignment.' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Assignment not found.' })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Assignment> {
     return this.assignmentsService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Update assignment' })
-  @ApiResponse({ status: 200, description: 'Assignment updated successfully' })
-  @ApiResponse({ status: 404, description: 'Assignment not found' })
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an assignment' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Assignment updated.' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateAssignmentDto,
-  ) {
-    return this.assignmentsService.update(id, dto);
+    @Body() updateAssignmentDto: UpdateAssignmentDto,
+  ): Promise<Assignment> {
+    return this.assignmentsService.update(id, updateAssignmentDto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete assignment (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Assignment deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Assignment not found' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete an assignment' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Assignment deleted.' })
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.assignmentsService.remove(id);
   }
 
+  // Submission endpoints
   @Post(':id/submit')
-  @ApiOperation({ summary: 'Submit assignment (Student)' })
-  @ApiResponse({ status: 201, description: 'Assignment submitted successfully' })
-  @ApiResponse({ status: 400, description: 'Assignment closed or past due' })
-  async submit(
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit an assignment' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Submission created.' })
+  async submitAssignment(
     @Param('id', ParseUUIDPipe) assignmentId: string,
-    @CurrentUser('id') studentId: string,
     @Body() dto: SubmitAssignmentDto,
+    @CurrentUser('id') studentId: string,
   ) {
     return this.assignmentsService.submit(assignmentId, studentId, dto);
   }
 
-  @Patch('submissions/:submissionId/grade')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Grade a submission (Teacher/Admin)' })
-  @ApiResponse({ status: 200, description: 'Submission graded successfully' })
-  @ApiResponse({ status: 404, description: 'Submission not found' })
-  async grade(
-    @Param('submissionId', ParseUUIDPipe) submissionId: string,
-    @Body() dto: GradeAssignmentDto,
-  ) {
-    return this.assignmentsService.grade(submissionId, dto);
+  @Get(':id/submissions')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all submissions for an assignment' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return all submissions.' })
+  async getSubmissions(@Param('id', ParseUUIDPipe) assignmentId: string) {
+    return this.assignmentsService.getSubmissions(assignmentId);
   }
 
-  @Get(':id/submission')
+  @Get(':id/my-submission')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user submission for an assignment' })
-  @ApiResponse({ status: 200, description: 'Submission found' })
-  async getSubmission(
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return the submission.' })
+  async getMySubmission(
     @Param('id', ParseUUIDPipe) assignmentId: string,
     @CurrentUser('id') studentId: string,
   ) {
-    return this.assignmentsService.getSubmission(assignmentId, studentId);
+    return this.assignmentsService.getStudentSubmission(assignmentId, studentId);
+  }
+}
+
+// Separate controller for submissions to handle grading
+@ApiTags('submissions')
+@Controller('submissions')
+export class SubmissionsController {
+  constructor(private readonly assignmentsService: AssignmentsService) {}
+
+  @Patch(':id/grade')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Grade a submission' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Submission graded.' })
+  async gradeSubmission(
+    @Param('id', ParseUUIDPipe) submissionId: string,
+    @Body() dto: GradeSubmissionDto,
+  ) {
+    return this.assignmentsService.gradeSubmission(submissionId, dto.score, dto.feedback);
+  }
+
+  @Get(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a submission by ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return the submission.' })
+  async getSubmission(@Param('id', ParseUUIDPipe) id: string) {
+    return this.assignmentsService.getSubmissionById(id);
   }
 }

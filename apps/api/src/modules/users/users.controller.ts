@@ -2,100 +2,59 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
-  Param,
   Delete,
+  Body,
+  Param,
   Query,
-  ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto } from './dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
+import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../auth/dto/auth.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  async findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.usersService.findAll(Number(page), Number(limit));
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
   @Post()
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create a new user (Admin only)' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
-  @ApiResponse({ status: 409, description: 'User already exists' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   async create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 
-  @Get()
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Get all users (Admin/Teacher only)' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'List of users' })
-  async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    return this.usersService.findAll(page || 1, limit || 10);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, description: 'User found' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findOne(id);
-  }
-
   @Patch(':id')
-  @ApiOperation({ summary: 'Update user' })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateUserDto,
-  ) {
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async remove(@Param('id') id: string) {
     return this.usersService.remove(id);
-  }
-
-  @Patch(':id/deactivate')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Deactivate user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deactivated' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async deactivate(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.deactivate(id);
-  }
-
-  @Patch(':id/activate')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Activate user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User activated' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async activate(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.activate(id);
   }
 }

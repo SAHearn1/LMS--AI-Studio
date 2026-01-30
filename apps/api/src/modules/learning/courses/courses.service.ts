@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateCourseDto, UpdateCourseDto } from './dto';
-import { CourseStatus as PrismaCourseStatus } from '@rootwork/database';
+import { CourseStatus as PrismaCourseStatus } from '@prisma/client';
 
 @Injectable()
 export class CoursesService {
@@ -15,7 +15,7 @@ export class CoursesService {
         instructorId: dto.instructorId,
         curriculumId: dto.curriculumId,
         duration: dto.duration,
-        thumbnailUrl: dto.thumbnailUrl,
+        thumbnail: dto.thumbnail,
         status: (dto.status as PrismaCourseStatus) || PrismaCourseStatus.DRAFT,
       },
       include: {
@@ -31,11 +31,14 @@ export class CoursesService {
     });
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, status?: string) {
     const skip = (page - 1) * limit;
+
+    const where = status ? { status: status as PrismaCourseStatus } : {};
 
     const [courses, total] = await Promise.all([
       this.prisma.course.findMany({
+        where,
         skip,
         take: limit,
         include: {
@@ -56,7 +59,7 @@ export class CoursesService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.course.count(),
+      this.prisma.course.count({ where }),
     ]);
 
     return {
@@ -117,7 +120,7 @@ export class CoursesService {
         description: dto.description,
         curriculumId: dto.curriculumId,
         duration: dto.duration,
-        thumbnailUrl: dto.thumbnailUrl,
+        thumbnail: dto.thumbnail,
         status: dto.status as PrismaCourseStatus,
       },
       include: {
@@ -138,8 +141,6 @@ export class CoursesService {
     await this.prisma.course.delete({
       where: { id },
     });
-
-    return { message: `Course with ID ${id} deleted successfully` };
   }
 
   async enrollStudent(courseId: string, studentId: string) {
@@ -157,7 +158,38 @@ export class CoursesService {
         studentId,
       },
       update: {},
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
     });
+  }
+
+  async unenrollStudent(courseId: string, studentId: string) {
+    await this.findOne(courseId);
+
+    await this.prisma.courseEnrollment.delete({
+      where: {
+        courseId_studentId: {
+          courseId,
+          studentId,
+        },
+      },
+    });
+
+    return { message: 'Student unenrolled successfully' };
   }
 
   async getEnrollments(courseId: string) {
@@ -172,8 +204,51 @@ export class CoursesService {
             firstName: true,
             lastName: true,
             email: true,
+            gradeLevel: true,
           },
         },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+  }
+
+  async getStudentEnrollments(studentId: string) {
+    return this.prisma.courseEnrollment.findMany({
+      where: { studentId },
+      include: {
+        course: {
+          include: {
+            instructor: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            _count: {
+              select: {
+                lessons: true,
+                assignments: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+  }
+
+  async updateEnrollmentProgress(courseId: string, studentId: string, progress: number) {
+    return this.prisma.courseEnrollment.update({
+      where: {
+        courseId_studentId: {
+          courseId,
+          studentId,
+        },
+      },
+      data: {
+        progress,
+        completedAt: progress >= 100 ? new Date() : null,
       },
     });
   }

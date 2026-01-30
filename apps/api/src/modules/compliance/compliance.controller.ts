@@ -38,101 +38,117 @@ export class ComplianceController {
   @Post('ieps')
   @Roles('ADMIN', 'TEACHER')
   @ApiOperation({ summary: 'Create a new IEP' })
-  @ApiResponse({ status: 201, description: 'IEP created successfully' })
-  async createIEP(@Body() dto: CreateIEPDto) {
-    return this.complianceService.createIEP(dto);
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'IEP has been successfully created.',
+    type: IEP,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions.',
+  })
+  async create(@Body() createIEPDto: CreateIEPDto): Promise<any> {
+    return this.complianceService.create(createIEPDto);
   }
 
-  @Get('ieps')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Get all IEPs (Teacher/Admin only)' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'studentId', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'List of IEPs' })
-  async findAllIEPs(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('studentId') studentId?: string,
-  ) {
-    return this.complianceService.findAllIEPs(page || 1, limit || 10, studentId);
+  @Get()
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all IEPs with pagination' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return all IEPs.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions.',
+  })
+  async findAll(@Query() paginationDto: PaginationDto): Promise<any> {
+    return this.complianceService.findAll(paginationDto.page, paginationDto.limit);
   }
 
-  @Get('ieps/:id')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Get IEP by ID (Teacher/Admin only)' })
-  @ApiResponse({ status: 200, description: 'IEP found' })
-  @ApiResponse({ status: 404, description: 'IEP not found' })
-  async findOneIEP(@Param('id', ParseUUIDPipe) id: string) {
-    return this.complianceService.findOneIEP(id);
+  @Get(':id')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get an IEP by ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return the IEP.',
+    type: IEP,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'IEP not found.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions.',
+  })
+  async findOne(@Param('id') id: string): Promise<any> {
+    return this.complianceService.findOne(id);
   }
 
-  @Patch('ieps/:id')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Update IEP' })
-  @ApiResponse({ status: 200, description: 'IEP updated successfully' })
-  @ApiResponse({ status: 404, description: 'IEP not found' })
-  async updateIEP(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateIEPDto,
-  ) {
-    return this.complianceService.updateIEP(id, dto);
+  @Patch(':id')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an IEP' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'IEP has been successfully updated.',
+    type: IEP,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'IEP not found.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions.',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateIEPDto: UpdateIEPDto,
+  ): Promise<any> {
+    return this.complianceService.update(id, updateIEPDto);
   }
 
-  @Delete('ieps/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete IEP (Admin only)' })
-  @ApiResponse({ status: 200, description: 'IEP deleted successfully' })
-  @ApiResponse({ status: 404, description: 'IEP not found' })
-  async removeIEP(@Param('id', ParseUUIDPipe) id: string) {
-    return this.complianceService.removeIEP(id);
-  }
-
-  // IEP Goal Endpoints
-  @Post('goals')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Create a new IEP goal' })
-  @ApiResponse({ status: 201, description: 'IEP Goal created successfully' })
-  async createGoal(@Body() dto: CreateIEPGoalDto) {
-    return this.complianceService.createGoal(dto);
-  }
-
-  @Get('goals/:id')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Get IEP Goal by ID' })
-  @ApiResponse({ status: 200, description: 'IEP Goal found' })
-  @ApiResponse({ status: 404, description: 'IEP Goal not found' })
-  async findOneGoal(@Param('id', ParseUUIDPipe) id: string) {
-    return this.complianceService.findOneGoal(id);
-  }
-
-  @Patch('goals/:id')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Update IEP Goal' })
-  @ApiResponse({ status: 200, description: 'IEP Goal updated successfully' })
-  @ApiResponse({ status: 404, description: 'IEP Goal not found' })
-  async updateGoal(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateIEPGoalDto,
-  ) {
-    return this.complianceService.updateGoal(id, dto);
-  }
-
-  @Delete('goals/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete IEP Goal (Admin only)' })
-  @ApiResponse({ status: 200, description: 'IEP Goal deleted successfully' })
-  @ApiResponse({ status: 404, description: 'IEP Goal not found' })
-  async removeGoal(@Param('id', ParseUUIDPipe) id: string) {
-    return this.complianceService.removeGoal(id);
-  }
-
-  // Student IEPs
-  @Get('students/:studentId/ieps')
-  @Roles('ADMIN', 'TEACHER')
-  @ApiOperation({ summary: 'Get all IEPs for a student' })
-  @ApiResponse({ status: 200, description: 'Student IEPs' })
-  async getStudentIEPs(@Param('studentId', ParseUUIDPipe) studentId: string) {
-    return this.complianceService.getStudentIEPs(studentId);
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete an IEP (Admin only)' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'IEP has been successfully deleted.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'IEP not found.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions.',
+  })
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
+    return this.complianceService.remove(id);
   }
 }

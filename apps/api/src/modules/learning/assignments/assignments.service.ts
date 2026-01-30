@@ -1,12 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import {
-  CreateAssignmentDto,
-  UpdateAssignmentDto,
-  SubmitAssignmentDto,
-  GradeAssignmentDto,
-} from './dto';
-import { AssignmentStatus as PrismaAssignmentStatus } from '@rootwork/database';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import { AssignmentStatus as PrismaAssignmentStatus, SubmissionStatus } from '@prisma/client';
+
+interface SubmitDto {
+  content?: string;
+  attachments?: string[];
+}
 
 @Injectable()
 export class AssignmentsService {
@@ -15,12 +16,14 @@ export class AssignmentsService {
   async create(dto: CreateAssignmentDto) {
     return this.prisma.assignment.create({
       data: {
+        courseId: dto.courseId,
         title: dto.title,
         description: dto.description,
-        courseId: dto.courseId,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
         maxPoints: dto.maxPoints ?? 100,
         status: (dto.status as PrismaAssignmentStatus) || PrismaAssignmentStatus.DRAFT,
+        rubric: dto.rubric || undefined,
+        attachments: dto.attachments || undefined,
       },
       include: {
         course: {
@@ -33,9 +36,16 @@ export class AssignmentsService {
     });
   }
 
-  async findAll(page = 1, limit = 10, courseId?: string) {
+  async findAll(page = 1, limit = 10, status?: string, courseId?: string) {
     const skip = (page - 1) * limit;
-    const where = courseId ? { courseId } : {};
+
+    const where: Record<string, unknown> = {};
+    if (status) {
+      where.status = status as PrismaAssignmentStatus;
+    }
+    if (courseId) {
+      where.courseId = courseId;
+    }
 
     const [assignments, total] = await Promise.all([
       this.prisma.assignment.findMany({
@@ -91,6 +101,12 @@ export class AssignmentsService {
               },
             },
           },
+          orderBy: { submittedAt: 'desc' },
+        },
+        _count: {
+          select: {
+            submissions: true,
+          },
         },
       },
     });
@@ -113,6 +129,8 @@ export class AssignmentsService {
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         maxPoints: dto.maxPoints,
         status: dto.status as PrismaAssignmentStatus,
+        rubric: dto.rubric,
+        attachments: dto.attachments,
       },
       include: {
         course: {
@@ -131,20 +149,11 @@ export class AssignmentsService {
     await this.prisma.assignment.delete({
       where: { id },
     });
-
-    return { message: `Assignment with ID ${id} deleted successfully` };
   }
 
-  async submit(assignmentId: string, studentId: string, dto: SubmitAssignmentDto) {
-    const assignment = await this.findOne(assignmentId);
-
-    if (assignment.status === 'CLOSED') {
-      throw new BadRequestException('This assignment is closed for submissions');
-    }
-
-    if (assignment.dueDate && new Date(assignment.dueDate) < new Date()) {
-      throw new BadRequestException('This assignment is past due');
-    }
+  // Submission methods
+  async submit(assignmentId: string, studentId: string, dto: SubmitDto) {
+    await this.findOne(assignmentId);
 
     return this.prisma.assignmentSubmission.upsert({
       where: {
@@ -157,49 +166,15 @@ export class AssignmentsService {
         assignmentId,
         studentId,
         content: dto.content,
-        fileUrl: dto.fileUrl,
+        attachments: dto.attachments || undefined,
+        status: SubmissionStatus.SUBMITTED,
+        submittedAt: new Date(),
       },
       update: {
         content: dto.content,
-        fileUrl: dto.fileUrl,
+        attachments: dto.attachments || undefined,
+        status: SubmissionStatus.SUBMITTED,
         submittedAt: new Date(),
-      },
-      include: {
-        assignment: {
-          select: {
-            id: true,
-            title: true,
-            maxPoints: true,
-          },
-        },
-      },
-    });
-  }
-
-  async grade(submissionId: string, dto: GradeAssignmentDto) {
-    const submission = await this.prisma.assignmentSubmission.findUnique({
-      where: { id: submissionId },
-      include: {
-        assignment: true,
-      },
-    });
-
-    if (!submission) {
-      throw new NotFoundException(`Submission with ID ${submissionId} not found`);
-    }
-
-    if (dto.score > submission.assignment.maxPoints) {
-      throw new BadRequestException(
-        `Score cannot exceed max points (${submission.assignment.maxPoints})`,
-      );
-    }
-
-    return this.prisma.assignmentSubmission.update({
-      where: { id: submissionId },
-      data: {
-        score: dto.score,
-        feedback: dto.feedback,
-        gradedAt: new Date(),
       },
       include: {
         student: {
@@ -221,7 +196,26 @@ export class AssignmentsService {
     });
   }
 
-  async getSubmission(assignmentId: string, studentId: string) {
+  async getSubmissions(assignmentId: string) {
+    await this.findOne(assignmentId);
+
+    return this.prisma.assignmentSubmission.findMany({
+      where: { assignmentId },
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
+  }
+
+  async getStudentSubmission(assignmentId: string, studentId: string) {
     return this.prisma.assignmentSubmission.findUnique({
       where: {
         assignmentId_studentId: {
@@ -230,6 +224,67 @@ export class AssignmentsService {
         },
       },
       include: {
+        assignment: {
+          select: {
+            id: true,
+            title: true,
+            maxPoints: true,
+            dueDate: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getSubmissionById(id: string) {
+    const submission = await this.prisma.assignmentSubmission.findUnique({
+      where: { id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        assignment: {
+          select: {
+            id: true,
+            title: true,
+            maxPoints: true,
+          },
+        },
+      },
+    });
+
+    if (!submission) {
+      throw new NotFoundException(`Submission with ID ${id} not found`);
+    }
+
+    return submission;
+  }
+
+  async gradeSubmission(submissionId: string, score: number, feedback?: string) {
+    const submission = await this.getSubmissionById(submissionId);
+
+    return this.prisma.assignmentSubmission.update({
+      where: { id: submissionId },
+      data: {
+        score,
+        feedback,
+        status: SubmissionStatus.GRADED,
+        gradedAt: new Date(),
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
         assignment: {
           select: {
             id: true,
