@@ -37,3 +37,5 @@ coverage/
 # Backup files
 seed-backup.json
 export-data.js
+.vercel
+.env*.local
