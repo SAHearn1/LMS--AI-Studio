@@ -41,7 +41,7 @@ export default function EditCoursePage() {
           thumbnail: response.data.thumbnail || '',
         });
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load course');
     } finally {
       setIsLoading(false);

@@ -9,7 +9,6 @@ import {
   Trash2,
   Calendar,
   Award,
-  Clock,
   FileText,
   Send,
   Loader2,

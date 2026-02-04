@@ -302,7 +302,7 @@ export default function GenerateLessonPage() {
             <div className="flex flex-col items-center justify-center h-[400px] text-charcoal/40">
               <BookOpen size={48} className="mb-4" />
               <p className="text-center">
-                Fill in the parameters and click "Generate Lesson"<br />
+                Fill in the parameters and click &ldquo;Generate Lesson&rdquo;<br />
                 to create AI-powered content
               </p>
             </div>

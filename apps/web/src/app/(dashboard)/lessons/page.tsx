@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, GraduationCap, Clock, BookOpen } from 'lucide-react';
+import { Plus, Search, Filter, GraduationCap, Clock } from 'lucide-react';
 import { api } from '@/lib/api/client';
-import { Lesson, PaginatedResponse, LessonStatus, Course } from '@/types';
-import { useUserStore } from '@/stores/userStore';
+import { Lesson, PaginatedResponse, Course } from '@/types';
 import { cn } from '@/lib/utils';
 
 export default function LessonsPage() {
-  const { user } = useUserStore();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);

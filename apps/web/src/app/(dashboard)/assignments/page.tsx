@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, FileText, Calendar, Award, Clock } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, Award } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { Assignment, PaginatedResponse, AssignmentStatus } from '@/types';
 import { useUserStore } from '@/stores/userStore';
