@@ -184,7 +184,7 @@ export default function LessonDetailPage() {
                 <div>
                   <p className="font-medium text-green-800">Lesson Completed!</p>
                   <p className="text-sm text-green-600">
-                    Great job! You've finished this lesson.
+                    Great job! You&apos;ve finished this lesson.
                   </p>
                 </div>
               </>
@@ -289,7 +289,7 @@ export default function LessonDetailPage() {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-semibold text-charcoal mb-4">Delete Lesson</h3>
             <p className="text-charcoal/70 mb-6">
-              Are you sure you want to delete "{lesson.title}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{lesson.title}&rdquo;? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-4">
               <button

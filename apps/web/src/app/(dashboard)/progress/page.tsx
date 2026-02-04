@@ -7,10 +7,8 @@ import {
   BookOpen,
   FileText,
   Trophy,
-  TrendingUp,
   Clock,
   CheckCircle2,
-  Circle,
 } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { CourseEnrollment, LessonProgress, AssignmentSubmission } from '@/types';

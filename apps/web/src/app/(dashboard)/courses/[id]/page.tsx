@@ -12,7 +12,6 @@ import {
   FileText,
   Clock,
   Plus,
-  MoreVertical,
   GraduationCap,
   Sparkles,
 } from 'lucide-react';
@@ -268,7 +267,7 @@ export default function CourseDetailPage() {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-semibold text-charcoal mb-4">Delete Course</h3>
             <p className="text-charcoal/70 mb-6">
-              Are you sure you want to delete "{course.title}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{course.title}&rdquo;? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-4">
               <button
@@ -296,12 +295,11 @@ function LessonsTab({
   lessons,
   courseId,
   canManage,
-  onUpdate,
 }: {
   lessons: Lesson[];
   courseId: string;
   canManage: boolean;
-  onUpdate: () => void;
+  onUpdate?: () => void;
 }) {
   return (
     <div className="space-y-4">

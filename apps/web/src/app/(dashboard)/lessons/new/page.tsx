@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api/client';
-import { LessonFormData, LessonType, LessonStatus, Course, PaginatedResponse } from '@/types';
+import { LessonFormData, Course, PaginatedResponse } from '@/types';
 
 export default function NewLessonPage() {
   const router = useRouter();

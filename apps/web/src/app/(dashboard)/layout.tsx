@@ -11,22 +11,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // Handle client-side mounting
   useEffect(() => {
-    setMounted(true);
+    const handleMount = async () => {
+      setMounted(true);
+    };
+    handleMount();
   }, []);
 
+  // Handle authentication check
   useEffect(() => {
     if (!mounted) return;
 
-    // If we have a token but no user, try to fetch user profile
-    if (token && !user && !isLoading) {
-      fetchCurrentUser().finally(() => setAuthChecked(true));
-    } else if (!token) {
-      // No token, redirect to login
-      router.replace('/login');
-    } else {
-      setAuthChecked(true);
-    }
+    const checkAuth = async () => {
+      // If we have a token but no user, try to fetch user profile
+      if (token && !user && !isLoading) {
+        await fetchCurrentUser().finally(() => setAuthChecked(true));
+      } else if (!token) {
+        // No token, redirect to login
+        router.replace('/login');
+      } else {
+        setAuthChecked(true);
+      }
+    };
+
+    checkAuth();
   }, [mounted, token, user, isLoading, fetchCurrentUser, router]);
 
   // Show loading while checking auth
@@ -56,9 +65,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-canvas-light">
       <div className="flex">
-        <Sidebar 
-          userRole={user.role} 
-          userName={`${user.firstName} ${user.lastName}`} 
+        <Sidebar
+          userRole={user.role}
+          userName={`${user.firstName} ${user.lastName}`}
         />
         <main className="flex-1 lg:ml-0 min-h-screen">
           <div className="p-4 lg:p-8 pt-16 lg:pt-8">

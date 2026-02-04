@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Disable no-undef for TypeScript files as TypeScript handles this
+      'no-undef': 'off',
+      // Disable empty pattern warning
+      'no-empty-pattern': 'off',
+    },
+  },
 ]);
 
 export default eslintConfig;

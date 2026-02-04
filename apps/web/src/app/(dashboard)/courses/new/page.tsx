@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api/client';
-import { CourseFormData, CourseStatus } from '@/types';
+import { CourseFormData } from '@/types';
 import { useUserStore } from '@/stores/userStore';
 
 export default function NewCoursePage() {
