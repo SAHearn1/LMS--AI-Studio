@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateCourseDto, UpdateCourseDto } from './dto';
-import { CourseStatus as PrismaCourseStatus } from '@prisma/client';
+import { CourseStatus as PrismaCourseStatus } from '@rootwork/database';
 
 @Injectable()
 export class CoursesService {
@@ -12,18 +12,18 @@ export class CoursesService {
       data: {
         title: dto.title,
         description: dto.description,
-        instructorId: dto.instructorId,
-        curriculumId: dto.curriculumId,
+        instructor_id: dto.instructorId,
+        curriculum_id: dto.curriculumId,
         duration: dto.duration,
-        thumbnail: dto.thumbnail,
+        thumbnail_url: dto.thumbnailUrl,
         status: (dto.status as PrismaCourseStatus) || PrismaCourseStatus.DRAFT,
       },
       include: {
-        instructor: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
@@ -42,22 +42,22 @@ export class CoursesService {
         skip,
         take: limit,
         include: {
-          instructor: {
+          users: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
+              first_name: true,
+              last_name: true,
             },
           },
           _count: {
             select: {
               lessons: true,
               assignments: true,
-              enrollments: true,
+              course_enrollments: true,
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.course.count({ where }),
     ]);
@@ -75,29 +75,29 @@ export class CoursesService {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
-        instructor: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
-        curriculum: {
+        curricula: {
           select: {
             id: true,
             title: true,
           },
         },
         lessons: {
-          orderBy: { orderIndex: 'asc' },
+          orderBy: { order_index: 'asc' },
         },
         assignments: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { created_at: 'desc' },
         },
         _count: {
           select: {
-            enrollments: true,
+            course_enrollments: true,
           },
         },
       },
@@ -118,17 +118,17 @@ export class CoursesService {
       data: {
         title: dto.title,
         description: dto.description,
-        curriculumId: dto.curriculumId,
+        curriculum_id: dto.curriculumId,
         duration: dto.duration,
-        thumbnail: dto.thumbnail,
+        thumbnail_url: dto.thumbnailUrl,
         status: dto.status as PrismaCourseStatus,
       },
       include: {
-        instructor: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
           },
         },
       },
@@ -148,26 +148,26 @@ export class CoursesService {
 
     return this.prisma.courseEnrollment.upsert({
       where: {
-        courseId_studentId: {
-          courseId,
-          studentId,
+        course_id_student_id: {
+          course_id: courseId,
+          student_id: studentId,
         },
       },
       create: {
-        courseId,
-        studentId,
+        course_id: courseId,
+        student_id: studentId,
       },
       update: {},
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
@@ -182,9 +182,9 @@ export class CoursesService {
 
     await this.prisma.courseEnrollment.delete({
       where: {
-        courseId_studentId: {
-          courseId,
-          studentId,
+        course_id_student_id: {
+          course_id: courseId,
+          student_id: studentId,
         },
       },
     });
@@ -196,33 +196,32 @@ export class CoursesService {
     await this.findOne(courseId);
 
     return this.prisma.courseEnrollment.findMany({
-      where: { courseId },
+      where: { course_id: courseId },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
-            gradeLevel: true,
           },
         },
       },
-      orderBy: { enrolledAt: 'desc' },
+      orderBy: { enrolled_at: 'desc' },
     });
   }
 
   async getStudentEnrollments(studentId: string) {
     return this.prisma.courseEnrollment.findMany({
-      where: { studentId },
+      where: { student_id: studentId },
       include: {
-        course: {
+        courses: {
           include: {
-            instructor: {
+            users: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                first_name: true,
+                last_name: true,
               },
             },
             _count: {
@@ -234,21 +233,25 @@ export class CoursesService {
           },
         },
       },
-      orderBy: { enrolledAt: 'desc' },
+      orderBy: { enrolled_at: 'desc' },
     });
   }
 
-  async updateEnrollmentProgress(courseId: string, studentId: string, progress: number) {
+  async updateEnrollmentProgress(
+    courseId: string,
+    studentId: string,
+    progress: number,
+  ) {
     return this.prisma.courseEnrollment.update({
       where: {
-        courseId_studentId: {
-          courseId,
-          studentId,
+        course_id_student_id: {
+          course_id: courseId,
+          student_id: studentId,
         },
       },
       data: {
         progress,
-        completedAt: progress >= 100 ? new Date() : null,
+        completed_at: progress >= 100 ? new Date() : null,
       },
     });
   }

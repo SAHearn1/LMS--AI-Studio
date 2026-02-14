@@ -1,5 +1,12 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaClient, CourseStatus } from '../../../../../packages/database/generated/prisma';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import {
+  PrismaClient,
+  CourseStatus,
+} from '../../../../../packages/database/generated/prisma';
 import { CreateCourseDto, UpdateCourseDto } from './dto/courses.dto';
 
 @Injectable()
@@ -16,17 +23,17 @@ export class CoursesService {
         skip,
         take: limit,
         include: {
-          instructor: {
-            select: { id: true, firstName: true, lastName: true },
+          users: {
+            select: { id: true, first_name: true, last_name: true },
           },
-          curriculum: {
+          curricula: {
             select: { id: true, title: true },
           },
           _count: {
-            select: { lessons: true, enrollments: true },
+            select: { lessons: true, course_enrollments: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.course.count({ where }),
     ]);
@@ -46,17 +53,17 @@ export class CoursesService {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
-        instructor: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+        users: {
+          select: { id: true, first_name: true, last_name: true, email: true },
         },
-        curriculum: true,
+        curricula: true,
         lessons: {
-          orderBy: { orderIndex: 'asc' },
+          orderBy: { order_index: 'asc' },
         },
-        enrollments: {
+        course_enrollments: {
           include: {
-            student: {
-              select: { id: true, firstName: true, lastName: true },
+            users: {
+              select: { id: true, first_name: true, last_name: true },
             },
           },
         },
@@ -75,13 +82,13 @@ export class CoursesService {
       data: {
         title: dto.title,
         description: dto.description,
-        curriculumId: dto.curriculumId,
+        curriculum_id: dto.curriculumId,
         status: dto.isPublished ? CourseStatus.PUBLISHED : CourseStatus.DRAFT,
-        instructorId,
+        instructor_id: instructorId,
       },
       include: {
-        instructor: {
-          select: { id: true, firstName: true, lastName: true },
+        users: {
+          select: { id: true, first_name: true, last_name: true },
         },
       },
     });
@@ -89,7 +96,12 @@ export class CoursesService {
     return course;
   }
 
-  async update(id: string, dto: UpdateCourseDto, userId: string, userRole: string) {
+  async update(
+    id: string,
+    dto: UpdateCourseDto,
+    userId: string,
+    userRole: string,
+  ) {
     const course = await this.prisma.course.findUnique({
       where: { id },
     });
@@ -99,26 +111,28 @@ export class CoursesService {
     }
 
     // Only instructor or admin can update
-    if (course.instructorId !== userId && userRole !== 'ADMIN') {
+    if (course.instructor_id !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('Not authorized to update this course');
     }
 
     const updateData: any = {
       title: dto.title,
       description: dto.description,
-      curriculumId: dto.curriculumId,
+      curriculum_id: dto.curriculumId,
     };
 
     if (dto.isPublished !== undefined) {
-      updateData.status = dto.isPublished ? CourseStatus.PUBLISHED : CourseStatus.DRAFT;
+      updateData.status = dto.isPublished
+        ? CourseStatus.PUBLISHED
+        : CourseStatus.DRAFT;
     }
 
     const updatedCourse = await this.prisma.course.update({
       where: { id },
       data: updateData,
       include: {
-        instructor: {
-          select: { id: true, firstName: true, lastName: true },
+        users: {
+          select: { id: true, first_name: true, last_name: true },
         },
       },
     });
@@ -135,7 +149,7 @@ export class CoursesService {
       throw new NotFoundException('Course not found');
     }
 
-    if (course.instructorId !== userId && userRole !== 'ADMIN') {
+    if (course.instructor_id !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('Not authorized to delete this course');
     }
 
@@ -156,8 +170,8 @@ export class CoursesService {
     }
 
     const lessons = await this.prisma.lesson.findMany({
-      where: { courseId },
-      orderBy: { orderIndex: 'asc' },
+      where: { course_id: courseId },
+      orderBy: { order_index: 'asc' },
     });
 
     return lessons;
@@ -179,9 +193,9 @@ export class CoursesService {
     // Check if already enrolled
     const existingEnrollment = await this.prisma.courseEnrollment.findUnique({
       where: {
-        courseId_studentId: {
-          courseId,
-          studentId,
+        course_id_student_id: {
+          course_id: courseId,
+          student_id: studentId,
         },
       },
     });
@@ -192,15 +206,15 @@ export class CoursesService {
 
     const enrollment = await this.prisma.courseEnrollment.create({
       data: {
-        courseId,
-        studentId,
+        course_id: courseId,
+        student_id: studentId,
       },
       include: {
-        course: {
+        courses: {
           select: { id: true, title: true },
         },
-        student: {
-          select: { id: true, firstName: true, lastName: true },
+        users: {
+          select: { id: true, first_name: true, last_name: true },
         },
       },
     });

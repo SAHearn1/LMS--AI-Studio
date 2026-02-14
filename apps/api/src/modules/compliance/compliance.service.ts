@@ -10,13 +10,10 @@ export class ComplianceService {
       data: {
         title: createIEPDto.title || 'IEP',
         description: createIEPDto.description,
-        student: {
-          connect: { id: createIEPDto.studentId },
-        },
+        student_id: createIEPDto.studentId,
         accommodations: createIEPDto.accommodations || [],
-        goals: createIEPDto.goals || [],
-        startDate: new Date(createIEPDto.startDate),
-        endDate: new Date(createIEPDto.endDate),
+        start_date: new Date(createIEPDto.startDate),
+        end_date: new Date(createIEPDto.endDate),
       },
     });
     return iep;
@@ -30,11 +27,11 @@ export class ComplianceService {
         skip,
         take: limit,
         include: {
-          student: {
-            select: { id: true, firstName: true, lastName: true },
+          users: {
+            select: { id: true, first_name: true, last_name: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.iEP.count(),
     ]);
@@ -54,8 +51,8 @@ export class ComplianceService {
     const iep = await this.prisma.iEP.findUnique({
       where: { id },
       include: {
-        student: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+        users: {
+          select: { id: true, first_name: true, last_name: true, email: true },
         },
       },
     });
@@ -78,11 +75,14 @@ export class ComplianceService {
 
     const updateData: any = {};
     if (updateIEPDto.title) updateData.title = updateIEPDto.title;
-    if (updateIEPDto.description) updateData.description = updateIEPDto.description;
-    if (updateIEPDto.accommodations) updateData.accommodations = updateIEPDto.accommodations;
-    if (updateIEPDto.goals) updateData.goals = updateIEPDto.goals;
-    if (updateIEPDto.startDate) updateData.startDate = new Date(updateIEPDto.startDate);
-    if (updateIEPDto.endDate) updateData.endDate = new Date(updateIEPDto.endDate);
+    if (updateIEPDto.description)
+      updateData.description = updateIEPDto.description;
+    if (updateIEPDto.accommodations)
+      updateData.accommodations = updateIEPDto.accommodations;
+    if (updateIEPDto.startDate)
+      updateData.start_date = new Date(updateIEPDto.startDate);
+    if (updateIEPDto.endDate)
+      updateData.end_date = new Date(updateIEPDto.endDate);
 
     const updatedIEP = await this.prisma.iEP.update({
       where: { id },

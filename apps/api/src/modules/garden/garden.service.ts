@@ -20,16 +20,16 @@ export class GardenService {
   async createGarden(dto: CreateGardenDto) {
     return this.prisma.garden.create({
       data: {
-        studentId: dto.studentId,
+        student_id: dto.studentId,
         name: dto.name,
         description: dto.description,
       },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
           },
         },
         plants: true,
@@ -45,11 +45,11 @@ export class GardenService {
         skip,
         take: limit,
         include: {
-          student: {
+          users: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
+              first_name: true,
+              last_name: true,
             },
           },
           _count: {
@@ -58,7 +58,7 @@ export class GardenService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.garden.count(),
     ]);
@@ -76,15 +76,15 @@ export class GardenService {
     const garden = await this.prisma.garden.findUnique({
       where: { id },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
           },
         },
         plants: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { created_at: 'asc' },
         },
       },
     });
@@ -126,9 +126,9 @@ export class GardenService {
     // Verify garden exists
     await this.findOneGarden(dto.gardenId);
 
-    return this.prisma.plant.create({
+    return this.prisma.plants.create({
       data: {
-        gardenId: dto.gardenId,
+        garden_id: dto.gardenId,
         name: dto.name,
         type: (dto.type as PrismaGardenItemType) || PrismaGardenItemType.PLANT,
         level: dto.level ?? 1,
@@ -139,14 +139,14 @@ export class GardenService {
   }
 
   async findOnePlant(id: string) {
-    const plant = await this.prisma.plant.findUnique({
+    const plant = await this.prisma.plants.findUnique({
       where: { id },
       include: {
-        garden: {
+        gardens: {
           select: {
             id: true,
             name: true,
-            studentId: true,
+            student_id: true,
           },
         },
       },
@@ -162,7 +162,7 @@ export class GardenService {
   async updatePlant(id: string, dto: UpdatePlantDto) {
     await this.findOnePlant(id);
 
-    return this.prisma.plant.update({
+    return this.prisma.plants.update({
       where: { id },
       data: {
         name: dto.name,
@@ -176,10 +176,10 @@ export class GardenService {
   async waterPlant(id: string) {
     await this.findOnePlant(id);
 
-    return this.prisma.plant.update({
+    return this.prisma.plants.update({
       where: { id },
       data: {
-        lastWatered: new Date(),
+        last_watered: new Date(),
         health: 100, // Restore health when watered
       },
     });
@@ -188,7 +188,7 @@ export class GardenService {
   async removePlant(id: string) {
     await this.findOnePlant(id);
 
-    await this.prisma.plant.delete({
+    await this.prisma.plants.delete({
       where: { id },
     });
 
@@ -199,8 +199,8 @@ export class GardenService {
   async addReward(dto: AddRewardDto) {
     return this.prisma.gardenReward.create({
       data: {
-        studentId: dto.studentId,
-        rewardType: dto.rewardType as PrismaRewardType,
+        student_id: dto.studentId,
+        reward_type: dto.rewardType as PrismaRewardType,
         amount: dto.amount ?? 1,
         reason: dto.reason,
       },
@@ -212,12 +212,12 @@ export class GardenService {
 
     const [rewards, total] = await Promise.all([
       this.prisma.gardenReward.findMany({
-        where: { studentId },
+        where: { student_id: studentId },
         skip,
         take: limit,
-        orderBy: { earnedAt: 'desc' },
+        orderBy: { earned_at: 'desc' },
       }),
-      this.prisma.gardenReward.count({ where: { studentId } }),
+      this.prisma.gardenReward.count({ where: { student_id: studentId } }),
     ]);
 
     return {
@@ -232,16 +232,16 @@ export class GardenService {
   // Get student's garden with all details
   async getStudentGarden(studentId: string) {
     const gardens = await this.prisma.garden.findMany({
-      where: { studentId },
+      where: { student_id: studentId },
       include: {
         plants: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { created_at: 'asc' },
         },
       },
     });
 
     const totalRewards = await this.prisma.gardenReward.aggregate({
-      where: { studentId },
+      where: { student_id: studentId },
       _sum: {
         amount: true,
       },

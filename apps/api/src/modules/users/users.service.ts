@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaClient } from '../../../../../packages/database/generated/prisma';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
 import * as bcrypt from 'bcryptjs';
@@ -9,7 +13,7 @@ export class UsersService {
 
   async findAll(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-    
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
@@ -17,13 +21,13 @@ export class UsersService {
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
+          first_name: true,
+          last_name: true,
           role: true,
-          createdAt: true,
-          updatedAt: true,
+          created_at: true,
+          updated_at: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.user.count(),
     ]);
@@ -45,14 +49,14 @@ export class UsersService {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        first_name: true,
+        last_name: true,
         role: true,
-        createdAt: true,
-        updatedAt: true,
-        enrollments: {
+        created_at: true,
+        updated_at: true,
+        course_enrollments: {
           include: {
-            course: true,
+            courses: true,
           },
         },
       },
@@ -79,19 +83,19 @@ export class UsersService {
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
-        password: hashedPassword,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
+        password_hash: hashedPassword,
+        first_name: dto.firstName,
+        last_name: dto.lastName,
         role: dto.role || 'STUDENT',
       },
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        first_name: true,
+        last_name: true,
         role: true,
-        createdAt: true,
-        updatedAt: true,
+        created_at: true,
+        updated_at: true,
       },
     });
 
@@ -107,10 +111,14 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const updateData: any = { ...dto };
-    
+    const updateData: any = {};
+    if (dto.email) updateData.email = dto.email;
+    if (dto.firstName) updateData.first_name = dto.firstName;
+    if (dto.lastName) updateData.last_name = dto.lastName;
+    if (dto.role) updateData.role = dto.role;
+
     if (dto.password) {
-      updateData.password = await bcrypt.hash(dto.password, 10);
+      updateData.password_hash = await bcrypt.hash(dto.password, 10);
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -119,11 +127,11 @@ export class UsersService {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        first_name: true,
+        last_name: true,
         role: true,
-        createdAt: true,
-        updatedAt: true,
+        created_at: true,
+        updated_at: true,
       },
     });
 

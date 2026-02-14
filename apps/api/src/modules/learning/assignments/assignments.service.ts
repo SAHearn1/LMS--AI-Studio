@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
-import { AssignmentStatus as PrismaAssignmentStatus, SubmissionStatus } from '@prisma/client';
+import { AssignmentStatus as PrismaAssignmentStatus } from '@rootwork/database';
 
 interface SubmitDto {
   content?: string;
@@ -16,17 +16,17 @@ export class AssignmentsService {
   async create(dto: CreateAssignmentDto) {
     return this.prisma.assignment.create({
       data: {
-        courseId: dto.courseId,
+        course_id: dto.courseId,
         title: dto.title,
         description: dto.description,
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
-        maxPoints: dto.maxPoints ?? 100,
-        status: (dto.status as PrismaAssignmentStatus) || PrismaAssignmentStatus.DRAFT,
-        rubric: dto.rubric || undefined,
-        attachments: dto.attachments || undefined,
+        due_date: dto.dueDate ? new Date(dto.dueDate) : null,
+        max_points: dto.maxPoints ?? 100,
+        status:
+          (dto.status as PrismaAssignmentStatus) ||
+          PrismaAssignmentStatus.DRAFT,
       },
       include: {
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
@@ -44,7 +44,7 @@ export class AssignmentsService {
       where.status = status as PrismaAssignmentStatus;
     }
     if (courseId) {
-      where.courseId = courseId;
+      where.course_id = courseId;
     }
 
     const [assignments, total] = await Promise.all([
@@ -53,7 +53,7 @@ export class AssignmentsService {
         skip,
         take: limit,
         include: {
-          course: {
+          courses: {
             select: {
               id: true,
               title: true,
@@ -61,11 +61,11 @@ export class AssignmentsService {
           },
           _count: {
             select: {
-              submissions: true,
+              assignment_submissions: true,
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.assignment.count({ where }),
     ]);
@@ -83,29 +83,29 @@ export class AssignmentsService {
     const assignment = await this.prisma.assignment.findUnique({
       where: { id },
       include: {
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
-            instructorId: true,
+            instructor_id: true,
           },
         },
-        submissions: {
+        assignment_submissions: {
           include: {
-            student: {
+            users: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
+                first_name: true,
+                last_name: true,
                 email: true,
               },
             },
           },
-          orderBy: { submittedAt: 'desc' },
+          orderBy: { submitted_at: 'desc' },
         },
         _count: {
           select: {
-            submissions: true,
+            assignment_submissions: true,
           },
         },
       },
@@ -126,14 +126,12 @@ export class AssignmentsService {
       data: {
         title: dto.title,
         description: dto.description,
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
-        maxPoints: dto.maxPoints,
+        due_date: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        max_points: dto.maxPoints,
         status: dto.status as PrismaAssignmentStatus,
-        rubric: dto.rubric,
-        attachments: dto.attachments,
       },
       include: {
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
@@ -157,39 +155,35 @@ export class AssignmentsService {
 
     return this.prisma.assignmentSubmission.upsert({
       where: {
-        assignmentId_studentId: {
-          assignmentId,
-          studentId,
+        assignment_id_student_id: {
+          assignment_id: assignmentId,
+          student_id: studentId,
         },
       },
       create: {
-        assignmentId,
-        studentId,
+        assignment_id: assignmentId,
+        student_id: studentId,
         content: dto.content,
-        attachments: dto.attachments || undefined,
-        status: SubmissionStatus.SUBMITTED,
-        submittedAt: new Date(),
+        submitted_at: new Date(),
       },
       update: {
         content: dto.content,
-        attachments: dto.attachments || undefined,
-        status: SubmissionStatus.SUBMITTED,
-        submittedAt: new Date(),
+        submitted_at: new Date(),
       },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
-        assignment: {
+        assignments: {
           select: {
             id: true,
             title: true,
-            maxPoints: true,
+            max_points: true,
           },
         },
       },
@@ -200,36 +194,36 @@ export class AssignmentsService {
     await this.findOne(assignmentId);
 
     return this.prisma.assignmentSubmission.findMany({
-      where: { assignmentId },
+      where: { assignment_id: assignmentId },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
       },
-      orderBy: { submittedAt: 'desc' },
+      orderBy: { submitted_at: 'desc' },
     });
   }
 
   async getStudentSubmission(assignmentId: string, studentId: string) {
     return this.prisma.assignmentSubmission.findUnique({
       where: {
-        assignmentId_studentId: {
-          assignmentId,
-          studentId,
+        assignment_id_student_id: {
+          assignment_id: assignmentId,
+          student_id: studentId,
         },
       },
       include: {
-        assignment: {
+        assignments: {
           select: {
             id: true,
             title: true,
-            maxPoints: true,
-            dueDate: true,
+            max_points: true,
+            due_date: true,
           },
         },
       },
@@ -240,19 +234,19 @@ export class AssignmentsService {
     const submission = await this.prisma.assignmentSubmission.findUnique({
       where: { id },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
-        assignment: {
+        assignments: {
           select: {
             id: true,
             title: true,
-            maxPoints: true,
+            max_points: true,
           },
         },
       },
@@ -265,31 +259,34 @@ export class AssignmentsService {
     return submission;
   }
 
-  async gradeSubmission(submissionId: string, score: number, feedback?: string) {
-    const submission = await this.getSubmissionById(submissionId);
+  async gradeSubmission(
+    submissionId: string,
+    score: number,
+    feedback?: string,
+  ) {
+    await this.getSubmissionById(submissionId);
 
     return this.prisma.assignmentSubmission.update({
       where: { id: submissionId },
       data: {
         score,
         feedback,
-        status: SubmissionStatus.GRADED,
-        gradedAt: new Date(),
+        graded_at: new Date(),
       },
       include: {
-        student: {
+        users: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            first_name: true,
+            last_name: true,
             email: true,
           },
         },
-        assignment: {
+        assignments: {
           select: {
             id: true,
             title: true,
-            maxPoints: true,
+            max_points: true,
           },
         },
       },
