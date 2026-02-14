@@ -12,9 +12,11 @@ export class CurriculumService {
       data: {
         title: dto.title,
         description: dto.description,
-        gradeLevel: dto.gradeLevel,
+        grade_level: dto.gradeLevel,
         subject: dto.subject,
-        status: (dto.status as PrismaCurriculumStatus) || PrismaCurriculumStatus.DRAFT,
+        status:
+          (dto.status as PrismaCurriculumStatus) ||
+          PrismaCurriculumStatus.DRAFT,
       },
     });
   }
@@ -34,7 +36,7 @@ export class CurriculumService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.curriculum.count(),
     ]);
@@ -77,7 +79,7 @@ export class CurriculumService {
       data: {
         title: dto.title,
         description: dto.description,
-        gradeLevel: dto.gradeLevel,
+        grade_level: dto.gradeLevel,
         subject: dto.subject,
         status: dto.status as PrismaCurriculumStatus,
       },

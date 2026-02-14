@@ -9,6 +9,7 @@ import {
   Query,
   ParseUUIDPipe,
   UseGuards,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,6 +27,7 @@ import {
 } from './dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiTags('compliance')
 @ApiBearerAuth()
@@ -41,7 +43,6 @@ export class ComplianceController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'IEP has been successfully created.',
-    type: IEP,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -56,7 +57,7 @@ export class ComplianceController {
   }
 
   @Get()
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles('TEACHER', 'ADMIN')
   @UseGuards(RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all IEPs with pagination' })
@@ -81,18 +82,20 @@ export class ComplianceController {
     description: 'Insufficient permissions.',
   })
   async findAll(@Query() paginationDto: PaginationDto): Promise<any> {
-    return this.complianceService.findAll(paginationDto.page, paginationDto.limit);
+    return this.complianceService.findAll(
+      paginationDto.page,
+      paginationDto.limit,
+    );
   }
 
   @Get(':id')
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles('TEACHER', 'ADMIN')
   @UseGuards(RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get an IEP by ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Return the IEP.',
-    type: IEP,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -107,14 +110,13 @@ export class ComplianceController {
   }
 
   @Patch(':id')
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles('TEACHER', 'ADMIN')
   @UseGuards(RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update an IEP' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'IEP has been successfully updated.',
-    type: IEP,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -132,7 +134,7 @@ export class ComplianceController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete an IEP (Admin only)' })

@@ -10,7 +10,6 @@ import {
   ParseUUIDPipe,
   UseGuards,
   HttpStatus,
-  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +23,7 @@ import { CreateCourseDto, UpdateCourseDto } from './dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 class EnrollStudentDto {
   studentId: string;
@@ -71,8 +71,12 @@ export class CoursesController {
   async findAll(
     @Query() paginationDto: PaginationDto,
     @Query('status') status?: string,
-  ): Promise<PaginatedResult<Course>> {
-    return this.coursesService.findAll(paginationDto.page, paginationDto.limit, status);
+  ): Promise<any> {
+    return this.coursesService.findAll(
+      paginationDto.page,
+      paginationDto.limit,
+      status,
+    );
   }
 
   @Get(':id')
@@ -80,13 +84,12 @@ export class CoursesController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Return the course.',
-    type: Course,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Course not found.',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Course> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
     return this.coursesService.findOne(id);
   }
 
@@ -98,12 +101,12 @@ export class CoursesController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCourseDto: UpdateCourseDto,
-  ): Promise<Course> {
+  ): Promise<any> {
     return this.coursesService.update(id, updateCourseDto);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a course (Admin only)' })
@@ -142,7 +145,7 @@ export class CoursesController {
   }
 
   @Delete(':id/enroll/:studentId')
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles('TEACHER', 'ADMIN')
   @UseGuards(RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Unenroll a student from a course' })

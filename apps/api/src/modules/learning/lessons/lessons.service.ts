@@ -15,15 +15,15 @@ export class LessonsService {
       data: {
         title: dto.title,
         content: dto.content,
-        courseId: dto.courseId,
-        orderIndex: dto.orderIndex,
+        course_id: dto.courseId,
+        order_index: dto.orderIndex,
         duration: dto.duration,
         type: (dto.type as PrismaLessonType) || PrismaLessonType.TEXT,
         status: (dto.status as PrismaLessonStatus) || PrismaLessonStatus.DRAFT,
-        videoUrl: dto.videoUrl,
+        video_url: dto.videoUrl,
       },
       include: {
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
@@ -35,7 +35,7 @@ export class LessonsService {
 
   async findAll(page = 1, limit = 10, courseId?: string) {
     const skip = (page - 1) * limit;
-    const where = courseId ? { courseId } : {};
+    const where = courseId ? { course_id: courseId } : {};
 
     const [lessons, total] = await Promise.all([
       this.prisma.lesson.findMany({
@@ -43,14 +43,14 @@ export class LessonsService {
         skip,
         take: limit,
         include: {
-          course: {
+          courses: {
             select: {
               id: true,
               title: true,
             },
           },
         },
-        orderBy: [{ courseId: 'asc' }, { orderIndex: 'asc' }],
+        orderBy: [{ course_id: 'asc' }, { order_index: 'asc' }],
       }),
       this.prisma.lesson.count({ where }),
     ]);
@@ -68,11 +68,11 @@ export class LessonsService {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
       include: {
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
-            instructorId: true,
+            instructor_id: true,
           },
         },
       },
@@ -93,14 +93,14 @@ export class LessonsService {
       data: {
         title: dto.title,
         content: dto.content,
-        orderIndex: dto.orderIndex,
+        order_index: dto.orderIndex,
         duration: dto.duration,
         type: dto.type as PrismaLessonType,
         status: dto.status as PrismaLessonStatus,
-        videoUrl: dto.videoUrl,
+        video_url: dto.videoUrl,
       },
       include: {
-        course: {
+        courses: {
           select: {
             id: true,
             title: true,
@@ -125,20 +125,20 @@ export class LessonsService {
 
     return this.prisma.lessonProgress.upsert({
       where: {
-        lessonId_studentId: {
-          lessonId,
-          studentId,
+        lesson_id_student_id: {
+          lesson_id: lessonId,
+          student_id: studentId,
         },
       },
       create: {
-        lessonId,
-        studentId,
+        lesson_id: lessonId,
+        student_id: studentId,
         completed: true,
-        completedAt: new Date(),
+        completed_at: new Date(),
       },
       update: {
         completed: true,
-        completedAt: new Date(),
+        completed_at: new Date(),
       },
     });
   }
@@ -146,9 +146,9 @@ export class LessonsService {
   async getProgress(lessonId: string, studentId: string) {
     return this.prisma.lessonProgress.findUnique({
       where: {
-        lessonId_studentId: {
-          lessonId,
-          studentId,
+        lesson_id_student_id: {
+          lesson_id: lessonId,
+          student_id: studentId,
         },
       },
     });

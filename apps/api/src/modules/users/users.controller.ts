@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -25,10 +26,7 @@ export class UsersController {
   @Get()
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.TEACHER)
-  async findAll(
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
+  async findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
     return this.usersService.findAll(Number(page), Number(limit));
   }
 

@@ -3,7 +3,14 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage } from 'konva/lib/Stage';
-import { NodeType, type CanvasNode, type Connection, type NodePosition, type ModalType, type LessonPlan } from '../types';
+import {
+  NodeType,
+  type CanvasNode,
+  type Connection,
+  type NodePosition,
+  type ModalType,
+  type LessonPlan,
+} from '../types';
 import {
   TextNodeData,
   ImageNodeData,
@@ -11,7 +18,7 @@ import {
   VoiceNodeData,
   LinkNodeData,
   TaskNodeData,
-  DrawNodeData
+  DrawNodeData,
 } from '../types';
 
 interface CanvasState {
@@ -54,17 +61,22 @@ const defaultNodes: Record<string, CanvasNode> = {
     type: NodeType.Text,
     position: { x: 150, y: 150 },
     size: { width: 250, height: 120 },
-    data: { text: 'Welcome to RootWork Canvas! 🌱\n\nDouble-click to edit this note.', backgroundColor: '#A7F3D0' }
+    data: {
+      text: 'Welcome to RootWork Canvas! 🌱\n\nDouble-click to edit this note.',
+      backgroundColor: '#A7F3D0',
+    },
   },
   'node-2': {
     id: 'node-2',
     type: NodeType.Text,
     position: { x: 500, y: 250 },
     size: { width: 250, height: 160 },
-    data: { text: "This is a visual workspace to organize your thoughts.\n\nUse the toolbar to add notes, or start a new lesson!", backgroundColor: '#FEF3C7' }
-  }
+    data: {
+      text: 'This is a visual workspace to organize your thoughts.\n\nUse the toolbar to add notes, or start a new lesson!',
+      backgroundColor: '#FEF3C7',
+    },
+  },
 };
-
 
 export const useCanvasState = create<CanvasState & CanvasActions>()(
   immer((set, get) => ({
@@ -77,46 +89,48 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
     lessonPlan: null,
     isLessonPanelOpen: false,
 
-    setStage: (stage) => {
+    setStage: stage => {
       set({ stage: stage });
     },
 
-    addNode: (node) => {
+    addNode: node => {
       const id = `node-${Date.now()}`;
       const newNode = { ...node, id } as CanvasNode;
-      set((state) => {
+      set(state => {
         state.nodes[id] = newNode;
       });
       return newNode;
     },
     updateNode: (id, updatedNode) => {
-        set((state) => {
-            if (state.nodes[id]) {
-                state.nodes[id] = { ...state.nodes[id], ...updatedNode };
-            }
-        });
+      set(state => {
+        if (state.nodes[id]) {
+          Object.assign(state.nodes[id], updatedNode);
+        }
+      });
     },
     updateNodeData: (id, data) => {
-      set((state) => {
-        if(state.nodes[id]) {
+      set(state => {
+        if (state.nodes[id]) {
           state.nodes[id].data = { ...state.nodes[id].data, ...data };
         }
       });
     },
     deleteSelectedNodes: () => {
-        set((state) => {
-            state.selectedNodeIds.forEach(id => {
-                delete state.nodes[id];
-            });
-            state.selectedNodeIds = [];
+      set(state => {
+        state.selectedNodeIds.forEach(id => {
+          delete state.nodes[id];
         });
+        state.selectedNodeIds = [];
+      });
     },
     selectNode: (id, multiSelect = false) => {
-      set((state) => {
+      set(state => {
         if (state.editingNodeId) return; // Prevent selection while editing
         if (multiSelect) {
           if (state.selectedNodeIds.includes(id)) {
-            state.selectedNodeIds = state.selectedNodeIds.filter(nodeId => nodeId !== id);
+            state.selectedNodeIds = state.selectedNodeIds.filter(
+              nodeId => nodeId !== id
+            );
           } else {
             state.selectedNodeIds.push(id);
           }
@@ -130,7 +144,7 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
       set({ selectedNodeIds: [] });
     },
     handleDragEnd: (e, id) => {
-      set((state) => {
+      set(state => {
         if (state.nodes[id]) {
           state.nodes[id].position = { x: e.target.x(), y: e.target.y() };
         }
@@ -153,37 +167,40 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
       stage.scale({ x: newScale, y: newScale });
     },
     zoomToFit: () => {
-        const stage = get().stage;
-        const nodes = Object.values(get().nodes);
-        if (!stage || nodes.length === 0) return;
-        
-        const padding = 100;
-        const { width, height } = stage.getSize();
-        
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodes.forEach((node: CanvasNode) => {
-            minX = Math.min(minX, node.position.x);
-            minY = Math.min(minY, node.position.y);
-            maxX = Math.max(maxX, node.position.x + node.size.width);
-            maxY = Math.max(maxY, node.position.y + node.size.height);
-        });
+      const stage = get().stage;
+      const nodes = Object.values(get().nodes);
+      if (!stage || nodes.length === 0) return;
 
-        const nodesWidth = maxX - minX;
-        const nodesHeight = maxY - minY;
+      const padding = 100;
+      const { width, height } = stage.getSize();
 
-        if (nodesWidth === 0 || nodesHeight === 0) return;
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      nodes.forEach((node: CanvasNode) => {
+        minX = Math.min(minX, node.position.x);
+        minY = Math.min(minY, node.position.y);
+        maxX = Math.max(maxX, node.position.x + node.size.width);
+        maxY = Math.max(maxY, node.position.y + node.size.height);
+      });
 
-        const scaleX = (width - padding * 2) / nodesWidth;
-        const scaleY = (height - padding * 2) / nodesHeight;
-        const newScale = Math.min(scaleX, scaleY, 1.5);
+      const nodesWidth = maxX - minX;
+      const nodesHeight = maxY - minY;
 
-        const newX = -minX * newScale + (width - nodesWidth * newScale) / 2;
-        const newY = -minY * newScale + (height - nodesHeight * newScale) / 2;
-        
-        stage.scale({ x: newScale, y: newScale });
-        stage.position({ x: newX, y: newY });
+      if (nodesWidth === 0 || nodesHeight === 0) return;
+
+      const scaleX = (width - padding * 2) / nodesWidth;
+      const scaleY = (height - padding * 2) / nodesHeight;
+      const newScale = Math.min(scaleX, scaleY, 1.5);
+
+      const newX = -minX * newScale + (width - nodesWidth * newScale) / 2;
+      const newY = -minY * newScale + (height - nodesHeight * newScale) / 2;
+
+      stage.scale({ x: newScale, y: newScale });
+      stage.position({ x: newX, y: newY });
     },
-    setEditingNodeId: (id) => {
+    setEditingNodeId: id => {
       set({ editingNodeId: id, selectedNodeIds: id ? [id] : [] });
     },
     openModal: (type, data) => {
@@ -192,7 +209,7 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
     closeModal: () => {
       set({ modal: { type: null, data: undefined } });
     },
-    setLessonPlan: (plan) => {
+    setLessonPlan: plan => {
       if (plan) {
         set({
           lessonPlan: {
@@ -205,10 +222,11 @@ export const useCanvasState = create<CanvasState & CanvasActions>()(
         set({ lessonPlan: null, isLessonPanelOpen: false });
       }
     },
-    toggleTaskCompletion: (taskIndex) => {
+    toggleTaskCompletion: taskIndex => {
       set(state => {
         if (state.lessonPlan && state.lessonPlan.tasks[taskIndex]) {
-          state.lessonPlan.tasks[taskIndex].completed = !state.lessonPlan.tasks[taskIndex].completed;
+          state.lessonPlan.tasks[taskIndex].completed =
+            !state.lessonPlan.tasks[taskIndex].completed;
         }
       });
     },
