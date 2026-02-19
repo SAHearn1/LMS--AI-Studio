@@ -11,6 +11,7 @@
 
 import { PrismaClient } from '../generated/prisma';
 import { randomUUID } from 'crypto';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -26,8 +27,8 @@ function daysAgo(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
-// Placeholder password hash (in production, use bcrypt)
-const DEMO_PASSWORD = '$2b$10$demopasswordhash';
+// Shared demo password for seeded users (hashed at seed runtime)
+const DEMO_PASSWORD_PLAINTEXT = 'demo123';
 
 const NOW = new Date();
 
@@ -36,6 +37,7 @@ const NOW = new Date();
 // ============================================
 
 async function main() {
+  const demoPasswordHash = await bcrypt.hash(DEMO_PASSWORD_PLAINTEXT, 10);
   console.log('🌱 Starting comprehensive database seed...\n');
 
   // Clean existing data
@@ -55,7 +57,7 @@ async function main() {
       last_name: 'Administrator',
       role: 'ADMIN',
       bio: 'System administrator for RootWork LMS',
-      password_hash: DEMO_PASSWORD,
+      password_hash: demoPasswordHash,
       updated_at: NOW,
     },
   });
@@ -68,7 +70,7 @@ async function main() {
       last_name: 'Williams',
       role: 'ADMIN',
       bio: 'School Principal',
-      password_hash: DEMO_PASSWORD,
+      password_hash: demoPasswordHash,
       updated_at: NOW,
     },
   });
@@ -82,7 +84,7 @@ async function main() {
         last_name: 'Smith',
         role: 'TEACHER',
         bio: 'Mathematics teacher with 15 years experience. Specializes in making math accessible and fun.',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -93,7 +95,7 @@ async function main() {
         last_name: 'Chen',
         role: 'TEACHER',
         bio: 'Science teacher passionate about hands-on learning and STEM education.',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -104,7 +106,7 @@ async function main() {
         last_name: 'Garcia',
         role: 'TEACHER',
         bio: 'English Language Arts teacher. Creative writing enthusiast and literacy advocate.',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -115,7 +117,7 @@ async function main() {
         last_name: 'Johnson',
         role: 'TEACHER',
         bio: 'Social Studies and History teacher. Brings history to life through storytelling.',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -126,7 +128,7 @@ async function main() {
         last_name: 'Thompson',
         role: 'TEACHER',
         bio: 'Special Education Coordinator. Certified in differentiated instruction and IEP development.',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -252,7 +254,7 @@ async function main() {
           first_name: s.firstName,
           last_name: s.lastName,
           role: 'STUDENT',
-          password_hash: DEMO_PASSWORD,
+          password_hash: demoPasswordHash,
           updated_at: NOW,
         },
       })
@@ -274,7 +276,7 @@ async function main() {
         first_name: 'Michael',
         last_name: 'Anderson',
         role: 'PARENT',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -284,7 +286,7 @@ async function main() {
         first_name: 'Jennifer',
         last_name: 'Brown',
         role: 'PARENT',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -294,7 +296,7 @@ async function main() {
         first_name: 'Carlos',
         last_name: 'Martinez',
         role: 'PARENT',
-        password_hash: DEMO_PASSWORD,
+        password_hash: demoPasswordHash,
         updated_at: NOW,
       },
     }),
@@ -1239,7 +1241,7 @@ async function main() {
   console.log('   Student: noah.3@rootwork.edu (3rd grade, has IEP)');
   console.log('   Student: mia.10@rootwork.edu (10th grade)');
   console.log('   Parent: parent.anderson@email.com');
-  console.log('\n   Password for all: demo123 (placeholder hash in DB)\n');
+  console.log('\n   Password for all: demo123\n');
 }
 
 // ============================================
@@ -1276,3 +1278,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

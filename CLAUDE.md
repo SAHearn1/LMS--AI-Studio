@@ -1,229 +1,155 @@
 # CLAUDE.md - RootWork Framework LMS
 
-## Project Overview
+## Project Summary
 
-Trauma-informed, healing-centered K-12 Learning Management System. Monorepo with three build targets: a Vite canvas app (root), a Next.js web app (`apps/web`), and a NestJS API (`apps/api`), plus shared packages.
+RootWork is a trauma-informed K-12 LMS monorepo with three active surfaces:
 
-## Repository Structure
+- Root app: React + Vite visual canvas app
+- Web app: Next.js app in `apps/web`
+- API app: NestJS app in `apps/api`
+- Shared workspace packages in `packages/*`
 
+## Monorepo Layout
+
+```text
+apps/
+  api/            NestJS REST API
+  web/            Next.js frontend
+packages/
+  config/         Shared ESLint and TypeScript config
+  database/       Prisma schema, client generation, seed scripts
+  types/          Shared TypeScript types
+  ui/             Shared UI component library
+components/       Root Vite app components
+hooks/            Root Vite app hooks
+services/         Root Vite app service integrations
+src/              Root Vite app styles/lib
+docker/
+  development/    docker-compose for local services
+  production/     Production Dockerfiles
 ```
-├── apps/
-│   ├── api/              # NestJS REST API (port 3001)
-│   └── web/              # Next.js 16 frontend (port 3000)
-├── packages/
-│   ├── database/         # Prisma schema, migrations, seed
-│   ├── types/            # Shared TypeScript types
-│   ├── ui/               # Shared Radix UI component library
-│   └── config/           # Shared ESLint/TS configs
-├── components/           # Root Vite app React components
-├── hooks/                # Root Vite app custom hooks
-├── services/             # Root Vite app services (Gemini AI)
-├── stores/               # Root Vite app Zustand stores
-├── utils/                # Root Vite app utilities
-├── docker/
-│   ├── development/      # docker-compose (Postgres, Redis, Mailhog)
-│   └── production/       # Multi-stage Dockerfiles
-└── .github/workflows/    # CI/CD (ci.yml, deploy-staging, deploy-production)
-```
 
-## Quick Reference - Commands
+## Package Manager And Tooling
 
-### Install & Setup
+- Package manager: `pnpm` (workspace configured via `pnpm-workspace.yaml`)
+- Node: use a modern LTS release compatible with Next.js 16 and NestJS 11
+- TypeScript across all apps/packages
+- Prisma for database access in `packages/database`
+
+## Common Commands
+
+Run from repository root unless noted.
+
+### Install
 
 ```bash
 pnpm install
-pnpm --filter database generate     # Generate Prisma client (REQUIRED before builds)
-docker compose -f docker/development/docker-compose.yml up -d  # Start Postgres/Redis/Mailhog
-pnpm --filter database migrate dev  # Run database migrations
-pnpm --filter database seed         # Seed demo data
 ```
 
-### Build
+### Root App (Vite)
 
 ```bash
-pnpm build                          # Root Vite app
-pnpm --filter web build             # Next.js web app
-pnpm --filter api build             # NestJS API (nest build)
+pnpm dev
+pnpm build
+pnpm preview
 ```
 
-### Dev Servers
+### Web App (Next.js)
 
 ```bash
-pnpm dev                            # Root Vite app (port 5173)
-pnpm --filter web dev               # Next.js dev server (port 3000)
-pnpm --filter api start:dev         # NestJS watch mode (port 3001)
+pnpm --filter web dev
+pnpm --filter web build
+pnpm --filter web lint
 ```
 
-### Lint & Type Check
+### API App (NestJS)
 
 ```bash
-pnpm type-check                     # Root tsc --noEmit (checks everything)
-pnpm --filter api lint              # API ESLint with auto-fix
-pnpm --filter web lint              # Web ESLint
+pnpm --filter api start:dev
+pnpm --filter api build
+pnpm --filter api lint
+pnpm --filter api test
+pnpm --filter api test:cov
+pnpm --filter api test:e2e
 ```
 
-### Test
+### Database (Prisma)
 
 ```bash
-pnpm --filter api test              # API unit tests (Jest)
-pnpm --filter api test:cov          # With coverage
-pnpm --filter api test:e2e          # E2E tests
+pnpm --filter @rootwork/database generate
+pnpm --filter @rootwork/database migrate
+pnpm --filter @rootwork/database migrate:deploy
+pnpm --filter @rootwork/database push
+pnpm --filter @rootwork/database seed
+pnpm --filter @rootwork/database studio
 ```
 
-### Database
+### Workspace Checks
 
 ```bash
-pnpm --filter database generate     # Generate Prisma client
-pnpm --filter database migrate dev  # Create + apply migration
-pnpm --filter database migrate:deploy  # Apply migrations (prod)
-pnpm --filter database push         # Push schema without migration
-pnpm --filter database studio       # Prisma Studio GUI
-pnpm --filter database seed         # Seed data
+pnpm type-check
+pnpm test
 ```
+
+## Local Development Workflow
+
+1. Install dependencies: `pnpm install`
+2. Start local infrastructure when needed: `docker compose -f docker/development/docker-compose.yml up -d`
+3. Generate Prisma client: `pnpm --filter @rootwork/database generate`
+4. Start services you are working on:
+   - Root canvas: `pnpm dev`
+   - Web: `pnpm --filter web dev`
+   - API: `pnpm --filter api start:dev`
 
 ## Git Hooks (Husky)
 
-- **pre-commit**: Runs `pnpm lint-staged` (ESLint --fix + Prettier on staged files)
-- **pre-push**: Runs `pnpm type-check` then `pnpm test`
+- `.husky/pre-commit`: runs `pnpm lint-staged`
+- `.husky/pre-push`: runs `pnpm type-check` and `pnpm test`
 
-Both hooks have deprecated husky v9 shim lines that should be removed before husky v10.
+## Code Conventions
 
-## Code Style
+- Formatting via Prettier (`.prettierrc`)
+- ESLint at root and app-level configs:
+  - `eslint.config.js`
+  - `apps/web/eslint.config.mjs`
+  - `apps/api/eslint.config.mjs`
+- Naming patterns in codebase:
+  - React components: PascalCase
+  - Hooks: `use*` camelCase
+  - DTOs/entities in Nest modules follow Nest conventions
 
-### Formatting (Prettier)
+## Architecture Notes
 
-- Single quotes, semicolons, trailing commas (es5)
-- 2-space indent, 80 char print width, LF line endings
-- Arrow parens: avoid
+### API (`apps/api/src`)
 
-### Linting (ESLint - flat config)
+- Feature modules grouped by domain (`auth`, `users`, `learning`, `compliance`, etc.)
+- Uses guards/decorators for auth and roles
+- Prisma integration via shared database package
 
-- **Root** (`eslint.config.js`): TypeScript + React + React Hooks rules
-  - `@typescript-eslint/no-unused-vars`: warn (underscore-prefixed args ignored)
-  - `@typescript-eslint/no-explicit-any`: warn
-  - `react-hooks/rules-of-hooks`: error
-  - `no-console`: off
-- **API** (`apps/api/eslint.config.mjs`): TypeScript + Prettier integration
-  - `@typescript-eslint/no-explicit-any`: off
-  - `@typescript-eslint/no-floating-promises`: warn
-  - `prettier/prettier`: error
+### Web (`apps/web/src`)
 
-### Naming Conventions
+- Next.js App Router with route groups such as `(auth)` and `(dashboard)`
+- Shared utility and state patterns in `src/lib`, `src/stores`, and `src/components`
 
-| Entity           | Convention                   | Example                                      |
-| ---------------- | ---------------------------- | -------------------------------------------- |
-| Components       | PascalCase files             | `Sidebar.tsx`, `Button.tsx`                  |
-| Hooks            | camelCase with `use` prefix  | `useCanvasState.ts`                          |
-| Utils/services   | camelCase files              | `cn.ts`, `geminiService.ts`                  |
-| Types/Interfaces | PascalCase                   | `User`, `ButtonProps`                        |
-| Enums            | PascalCase with UPPER values | `UserRole.ADMIN`                             |
-| Constants        | UPPER_SNAKE_CASE             | `ROLES_KEY`                                  |
-| NestJS files     | kebab-case                   | `auth.controller.ts`, `create-course.dto.ts` |
-| DB schema fields | snake_case                   | `first_name`, `password_hash`                |
+### Root Canvas App
 
-### Import Order
+- Uses Konva/react-konva for visual authoring and lesson composition
+- AI helpers and service integrations live in root `services/` and `src/lib/`
 
-1. External packages (`react`, `@nestjs/common`, etc.)
-2. Internal packages (`@rootwork/database`, `@/types`)
-3. Relative imports (`./components`, `../utils`)
+## Environment Files
 
-## Architecture Patterns
+Use app-specific env files as needed:
 
-### NestJS API (`apps/api/src/`)
+- Root app: `.env.local`
+- Web app: `apps/web/.env.example` as template
+- API app: create `apps/api/.env` for local API/database/auth settings
 
-- **Module pattern**: Each feature is a self-contained module with controller, service, DTOs, entities
-- **Auth**: Global `JwtAuthGuard` (bypass with `@Public()` decorator), `RolesGuard` for RBAC
-- **Roles**: `@Roles('ADMIN', 'TEACHER')` decorator for role-based access
-- **Database**: `PrismaService` injected via `PrismaModule` (global)
-- **Errors**: Use NestJS exceptions (`NotFoundException`, `UnauthorizedException`, `ConflictException`, etc.)
-- **API docs**: Swagger decorators (`@ApiTags`, `@ApiOperation`, `@ApiBearerAuth`)
-- **Config**: `@nestjs/config` with `registerAs()` pattern (files in `src/config/`)
+Do not commit secrets.
 
-Module structure:
+## Guidance For Claude Sessions
 
-```
-modules/[feature]/
-├── [feature].module.ts
-├── [feature].controller.ts
-├── [feature].service.ts
-├── dto/
-│   ├── create-[feature].dto.ts
-│   └── update-[feature].dto.ts
-└── entities/           # (optional)
-```
-
-Existing modules: `ai`, `analytics`, `auth`, `communications`, `compliance`, `curriculum`, `garden`, `integrations`, `learning` (assignments/courses/lessons), `users`
-
-### Next.js Web (`apps/web/src/`)
-
-- **App Router** with route groups: `(auth)` for login/signup, `(dashboard)` for role-based dashboards
-- **Auth**: NextAuth.js v4 with CredentialsProvider
-- **State**: Zustand with `persist` middleware (localStorage)
-- **API client**: Class-based `ApiClient` with token management, returns `{ data?, error?, status }`
-- **Middleware**: Route protection + role-based redirects (`src/middleware.ts`)
-- **Components**: `'use client'` directive for client components, `React.forwardRef` for compound components
-- **Path alias**: `@/*` maps to `./src/*`
-
-### Root Vite App
-
-- **Canvas**: Konva.js + react-konva for visual learning environment
-- **AI**: Google Generative AI (Gemini) integration
-- **State**: Zustand with Immer middleware
-- **Path alias**: `@/*` maps to `./*`
-
-### Shared Packages
-
-- **`@rootwork/database`**: Prisma client re-export, singleton instance, schema at `prisma/schema.prisma`
-- **`@rootwork/types`**: Shared type definitions (User, Course, Lesson, IEP, Garden, etc.)
-- **`@rootwork/ui`**: Radix UI + CVA + Tailwind component library
-
-## Database (Prisma + PostgreSQL)
-
-- Schema: `packages/database/prisma/schema.prisma`
-- Generated client output: `packages/database/generated/prisma`
-- Provider: PostgreSQL
-- Key models: User, Curriculum, Course, Lesson, Assignment, IEP, Garden
-- Roles enum: `STUDENT`, `TEACHER`, `ADMIN`, `PARENT`
-
-**Important**: The Prisma client must be generated before building any app. Run `pnpm --filter database generate` after install and after any schema changes.
-
-## Environment Variables
-
-### API (`apps/api/.env`)
-
-```
-DATABASE_URL=postgresql://rootwork:rootwork_dev@localhost:5432/rootwork_lms
-JWT_SECRET=<secret>
-JWT_EXPIRES_IN=15m
-NODE_ENV=development
-PORT=3001
-BCRYPT_SALT_ROUNDS=12
-```
-
-### Web (`apps/web/.env`)
-
-```
-DATABASE_URL="prisma+postgres://..."
-DIRECT_URL="postgres://..."
-NEXTAUTH_SECRET="<generate with: openssl rand -base64 32>"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-## CI/CD
-
-- **ci.yml**: Runs on push/PR to main/develop. Steps: install, lint, type-check, test, build, Snyk security scan
-- **deploy-staging.yml**: Push to develop triggers Vercel (web) + Railway (api) deploy
-- **deploy-production.yml**: Push to main triggers Vercel --prod + AWS ECS (placeholder)
-
-## Testing
-
-- **API tests**: Jest with `ts-jest`. Pattern: `*.spec.ts` (unit), `*.e2e-spec.ts` (e2e)
-- **Jest config**: Inline in `apps/api/package.json`, rootDir: `src`, testEnvironment: `node`
-- **Root/Web tests**: Not configured yet
-
-## Known Build Issues
-
-- Prisma client must be explicitly generated (`pnpm --filter database generate`) — the `pnpm install` step skips build scripts by default (pnpm `approve-builds` security)
-- `packages/ui` has missing peer dependencies (Radix UI, lucide-react, CVA, storybook)
-- API has missing Swagger decorator imports in some controllers (compliance, users)
-- Root `type-check` aggregates errors from all workspaces; individual app builds may succeed independently
+- Prefer minimal, targeted changes in the relevant app/package.
+- If changing API contracts, update corresponding web client usage.
+- If changing Prisma schema, regenerate client and include migration strategy.
+- Run lint/type-check/tests for the touched scope before finishing.
+- Keep changes aligned with trauma-informed and accessibility goals described in project docs.

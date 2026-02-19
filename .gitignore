@@ -39,3 +39,7 @@ seed-backup.json
 export-data.js
 .vercel
 .env*.local
+
+# Playwright artifacts
+apps/web/playwright-report/
+apps/web/test-results/

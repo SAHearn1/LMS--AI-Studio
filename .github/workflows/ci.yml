@@ -7,47 +7,63 @@ on:
     branches: [main, develop]
 
 jobs:
-  lint-and-test:
+  quality:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
+          node-version: '20'
+
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
-      
+          version: 9
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
+      - name: Generate Prisma client
+        run: pnpm --filter @rootwork/database generate
+
       - name: Lint
-        run: pnpm lint
-      
+        run: |
+          pnpm --filter web lint
+          pnpm --filter api lint
+
       - name: Type check
         run: pnpm type-check
-      
+
       - name: Test
-        run: pnpm test
-      
+        run: |
+          pnpm test
+          pnpm --filter api test
+
       - name: Build
-        run: pnpm build
+        run: |
+          pnpm build
+          pnpm --filter web build
+          pnpm --filter api build
 
   security-scan:
+    if: ${{ secrets.SNYK_TOKEN != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Run Snyk security scan
         uses: snyk/actions/node@master
         env:

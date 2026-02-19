@@ -141,9 +141,9 @@ function LoginForm() {
           <p className="text-sm font-medium text-gray-700 mb-2">Demo Accounts:</p>
           <div className="text-xs text-gray-600 space-y-1">
             <p><span className="font-medium">Admin:</span> admin@rootwork.edu</p>
-            <p><span className="font-medium">Teacher:</span> teacher@rootwork.edu</p>
-            <p><span className="font-medium">Student:</span> student@rootwork.edu</p>
-            <p><span className="font-medium">Password:</span> password123</p>
+            <p><span className="font-medium">Teacher:</span> msmith@rootwork.edu</p>
+            <p><span className="font-medium">Student:</span> noah.3@rootwork.edu</p>
+            <p><span className="font-medium">Password:</span> demo123</p>
           </div>
         </div>
 
@@ -192,3 +192,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
