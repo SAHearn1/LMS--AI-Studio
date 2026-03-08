@@ -1,6 +1,6 @@
 # Integration Points — LMS--AI-Studio
 
-## Google Gemini API
+- **SDK:** `@google/genai`
 - **SDK:** `@google/generative-ai`
 - **Auth:** API key via `VITE_GEMINI_API_KEY`
 - **Models used:** TODO — requires human verification
