@@ -1,0 +1,56 @@
+name: Agent Governance Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'AGENTS.md'
+      - 'repo.intelligence.yml'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+
+jobs:
+  validate-governance:
+    name: Validate Governance Files
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'agent-operating-system-install') || contains(github.head_ref, 'governance')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify AGENTS.md exists
+        run: |
+          if [ ! -f AGENTS.md ]; then
+            echo "ERROR: AGENTS.md is missing"
+            exit 1
+          fi
+          echo "AGENTS.md present"
+
+      - name: Verify repo.intelligence.yml exists
+        run: |
+          if [ ! -f repo.intelligence.yml ]; then
+            echo "ERROR: repo.intelligence.yml is missing"
+            exit 1
+          fi
+          echo "repo.intelligence.yml present"
+
+      - name: Verify no application source was modified
+        run: |
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep -v '^AGENTS.md' | grep -v '^repo.intelligence.yml' | grep -v '^docs/' | grep -v '^.github/' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "WARNING: Non-governance files changed:"
+            echo "$CHANGED"
+          else
+            echo "All changes are governance-scoped."
+          fi
+
+      - name: Governance install summary
+        run: |
+          echo "=== Governance Validation Complete ==="
+          echo "Repo: LMS--AI-Studio"
+          echo "Tier: 2"
+          echo "Hub: SAHearn1/rwfw-agent-governance"
