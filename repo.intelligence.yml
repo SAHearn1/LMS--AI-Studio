@@ -1,0 +1,61 @@
+# repo.intelligence.yml — LMS--AI-Studio
+# Anti-hallucination enforced: unverified fields marked TODO
+# Last updated: 2026-03-08 | Phase C governance install
+
+repo:
+  name: LMS--AI-Studio
+  owner: SAHearn1
+  tier: 2
+  classification: active-support
+  description: AI-powered learning management studio with canvas-based interactions
+
+stack:
+  frontend:
+    framework: React 19
+    bundler: Vite
+    language: TypeScript
+    canvas: Konva.js (React Konva)
+    styling: "TODO — requires human verification"
+  backend:
+    type: static-spa
+    api: "TODO — requires human verification"
+  ai:
+    provider: Google Gemini
+    sdk: "@google/generative-ai"
+    usage: "TODO — requires human verification"
+  runtime:
+    node_version: "TODO — requires human verification"
+
+auth:
+  provider: "TODO — requires human verification"
+  strategy: "TODO — requires human verification"
+
+database:
+  primary: "TODO — requires human verification"
+
+deployment:
+  platform: "TODO — requires human verification"
+  branch_strategy:
+    production: main
+    governance_install: agent-operating-system-install
+
+ci:
+  platform: GitHub Actions
+  governance_workflow: .github/workflows/agent-governance.yml
+
+entrypoints:
+  app: src/main.tsx
+  config: vite.config.ts
+
+critical_env_vars:
+  - VITE_GEMINI_API_KEY
+  - "TODO — verify additional env vars"
+
+related_repos:
+  - SAHearn1/rwfw-agent-governance
+  - SAHearn1/RWFW-LOS
+
+governance:
+  hub: SAHearn1/rwfw-agent-governance
+  install_branch: agent-operating-system-install
+  schema: registry/repo-intelligence.schema.json
